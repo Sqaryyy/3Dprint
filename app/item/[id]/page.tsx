@@ -222,7 +222,10 @@ export default function ItemPage() {
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
                 Sold by
               </h3>
-              <button className="flex items-center gap-4 w-full hover:bg-gray-50 p-3 -m-3 rounded-lg transition-colors group">
+              <button
+                onClick={() => (window.location.href = `/store/${store.id}`)}
+                className="flex items-center gap-4 w-full hover:bg-gray-50 p-3 -m-3 rounded-lg transition-colors group"
+              >
                 <div className="w-14 h-14 bg-gray-900 rounded-lg flex items-center justify-center shrink-0">
                   {store.logo ? (
                     <img
@@ -283,6 +286,14 @@ export default function ItemPage() {
                   </span>
                   <span className="text-sm text-gray-900 font-semibold">
                     28mm
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-gray-600 font-medium">
+                    Assembly
+                  </span>
+                  <span className="text-sm text-gray-900 font-semibold">
+                    Required
                   </span>
                 </div>
               </div>
