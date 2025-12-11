@@ -1,128 +1,86 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Download, Box } from "lucide-react";
+import { Search, Download, Store } from "lucide-react";
+import Link from "next/link";
+import { STORES, ALL_ITEMS, type Item, type StoreInfo } from "@/lib/data";
 
-interface Item {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  tags: string[];
-  image: string;
-  fileSize: string;
-  downloads: number;
-  category: string;
-  format: string;
-  type: string;
-}
-
-interface StoreInfo {
-  name: string;
-  description: string;
-  since: string;
-  logo: string;
-}
-
-export default function StoreFront() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [storeInfo, setStoreInfo] = useState<StoreInfo>({
-    name: "Highlands Miniatures",
-    description:
-      "We're Highlands Miniatures, a couple who creates awesome 3D printable miniatures for tabletop games, come and join us!",
-    since: "January 2018",
-    logo: "",
-  });
-
+export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("featured");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterFormat, setFilterFormat] = useState("all");
-  const [filterType, setFilterType] = useState("all");
-  const [filterPrice, setFilterPrice] = useState("all");
+  const [filterStore, setFilterStore] = useState("all");
+  const [filterUnitType, setFilterUnitType] = useState("all");
+  const [allStoreItems, setAllStoreItems] = useState<Item[]>([]);
 
-  const categories = [
-    "All",
-    "Orcs and Goblins",
-    "Sewer Vermin",
-    "Gallia",
-    "Dwarfs, Sons of Ymir",
-    "Aegean Elves",
-    "Sunland",
-    "Transilvanya",
-    "Eternal Dynasties",
-  ];
+  useEffect(() => {
+    // Load items from all stores
+    const loadAllStoreItems = () => {
+      const items: Item[] = [];
 
-  const formats = ["All", "3D", "3D & PDF", "PDF"];
-  const types = ["All", "Objects", "Bundles"];
-  const prices = ["All", "Free objects", "Premium objects"];
+      STORES.forEach((store) => {
+        const storedItems = sessionStorage.getItem(`store_${store.id}_items`);
+        if (storedItems) {
+          const storeItems = JSON.parse(storedItems);
+          items.push(...storeItems);
+        } else {
+          // If no custom items set, use default items for this store
+          const defaultItems = ALL_ITEMS.filter(
+            (item) => item.storeId === store.id
+          );
+          items.push(...defaultItems);
+        }
+      });
+
+      setAllStoreItems(items);
+    };
+
+    loadAllStoreItems();
+
+    // Listen for storage changes (when admin updates items)
+    const handleStorageChange = () => {
+      loadAllStoreItems();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also check periodically for sessionStorage changes (since storage event doesn't fire for same-tab changes)
+    const interval = setInterval(loadAllStoreItems, 1000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   const sortOptions = [
     { value: "featured", label: "Featured" },
-    { value: "newest", label: "Newest" },
     { value: "popular", label: "Most Popular" },
     { value: "price-low", label: "Price: Low to High" },
     { value: "price-high", label: "Price: High to Low" },
   ];
 
-  useEffect(() => {
-    // Load store items from localStorage
-    const storedItems = localStorage.getItem("storeItems");
-    if (storedItems) {
-      setItems(JSON.parse(storedItems));
-    }
-
-    // Load store info from localStorage
-    const storedInfo = localStorage.getItem("storeInfo");
-    if (storedInfo) {
-      setStoreInfo(JSON.parse(storedInfo));
-    }
-  }, []);
-
-  const resetFilters = () => {
-    setFilterCategory("all");
-    setFilterFormat("all");
-    setFilterType("all");
-    setFilterPrice("all");
-    setSearchQuery("");
-  };
+  const unitTypes = ["All", "Knight of the realm", "Man at arms", "Bowmen"];
 
   const filteredAndSortedItems = () => {
-    let result = items.filter((item) => {
+    let result = allStoreItems.filter((item) => {
       const matchesSearch =
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.army.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.tags.some((tag) =>
           tag.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
-      const matchesCategory =
-        filterCategory === "all" ||
-        filterCategory.toLowerCase() === item.category.toLowerCase();
+      const matchesStore =
+        filterStore === "all" || item.storeId === parseInt(filterStore);
 
-      const matchesFormat =
-        filterFormat === "all" ||
-        filterFormat.toLowerCase() === item.format.toLowerCase();
+      const matchesUnitType =
+        filterUnitType === "all" ||
+        filterUnitType.toLowerCase() === item.unitType.toLowerCase();
 
-      const matchesType =
-        filterType === "all" ||
-        (filterType === "objects" && item.type === "object") ||
-        (filterType === "bundles" && item.type === "bundle");
-
-      const matchesPrice =
-        filterPrice === "all" ||
-        (filterPrice === "free objects" && item.price === 0) ||
-        (filterPrice === "premium objects" && item.price > 0);
-
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesFormat &&
-        matchesType &&
-        matchesPrice
-      );
+      return matchesSearch && matchesStore && matchesUnitType;
     });
 
-    // Sort
     switch (sortBy) {
       case "popular":
         result.sort((a, b) => b.downloads - a.downloads);
@@ -132,8 +90,6 @@ export default function StoreFront() {
         break;
       case "price-high":
         result.sort((a, b) => b.price - a.price);
-        break;
-      default:
         break;
     }
 
@@ -147,32 +103,14 @@ export default function StoreFront() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Store Info */}
-          <div className="flex items-start gap-6 mb-8 pb-8 border-b border-gray-200">
-            <div className="w-24 h-24 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {storeInfo.logo ? (
-                <img
-                  src={storeInfo.logo}
-                  alt={storeInfo.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Box size={48} className="text-white" />
-              )}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-semibold text-gray-900">
-                  {storeInfo.name}
-                </h1>
-                <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full font-medium">
-                  3D Printing since {storeInfo.since}
-                </span>
-              </div>
-              <p className="text-gray-600 leading-relaxed max-w-3xl">
-                {storeInfo.description}
-              </p>
-            </div>
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              3D Miniatures Marketplace
+            </h1>
+            <p className="text-gray-600">
+              Discover high-quality 3D printable miniatures from talented
+              creators
+            </p>
           </div>
 
           {/* Search Bar */}
@@ -183,207 +121,194 @@ export default function StoreFront() {
             />
             <input
               type="text"
-              placeholder="Search miniatures..."
+              placeholder="Search miniatures, armies, or tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent bg-white"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white placeholder-gray-500"
             />
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex gap-6">
-          {/* Sidebar Filters */}
-          <div className="hidden lg:block w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sticky top-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Filters</h3>
-                <button
-                  onClick={resetFilters}
-                  className="text-sm text-gray-600 hover:text-gray-900"
-                >
-                  Reset
-                </button>
-              </div>
-
-              {/* Categories */}
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Categories
-                </h4>
-                <div className="space-y-2">
-                  {categories.map((cat) => (
-                    <label
-                      key={cat}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="radio"
-                        name="category"
-                        checked={filterCategory === cat.toLowerCase()}
-                        onChange={() => setFilterCategory(cat.toLowerCase())}
-                        className="mr-2"
+        {/* Featured Stores */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Featured Stores
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {STORES.map((store) => (
+              <Link
+                key={store.id}
+                href={`/store/${store.id}`}
+                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center shrink-0">
+                    {store.logo ? (
+                      <img
+                        src={store.logo}
+                        alt={store.name}
+                        className="w-full h-full object-cover rounded-lg"
                       />
-                      <span className="text-sm text-gray-600">{cat}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Format */}
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Format
-                </h4>
-                <div className="space-y-2">
-                  {formats.map((fmt) => (
-                    <label
-                      key={fmt}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="radio"
-                        name="format"
-                        checked={filterFormat === fmt.toLowerCase()}
-                        onChange={() => setFilterFormat(fmt.toLowerCase())}
-                        className="mr-2"
-                      />
-                      <span className="text-sm text-gray-600">{fmt}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Objects & Bundles */}
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Objects & Bundles
-                </h4>
-                <div className="space-y-2">
-                  {types.map((type) => (
-                    <label
-                      key={type}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="radio"
-                        name="type"
-                        checked={filterType === type.toLowerCase()}
-                        onChange={() => setFilterType(type.toLowerCase())}
-                        className="mr-2"
-                      />
-                      <span className="text-sm text-gray-600">{type}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price */}
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Price
-                </h4>
-                <div className="space-y-2">
-                  {prices.map((price) => (
-                    <label
-                      key={price}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="radio"
-                        name="price"
-                        checked={filterPrice === price.toLowerCase()}
-                        onChange={() => setFilterPrice(price.toLowerCase())}
-                        className="mr-2"
-                      />
-                      <span className="text-sm text-gray-600">{price}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Sort */}
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-sm text-gray-600">
-                {displayItems.length} items
-              </span>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                >
-                  {sortOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Items Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {displayItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {item.name}
+                    ) : (
+                      <Store size={24} className="text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">
+                      {store.name}
                     </h3>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {item.description}
-                    </p>
-
-                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                      <span className="flex items-center gap-1">
-                        <Download size={14} />
-                        {item.downloads}
-                      </span>
-                      <span>{item.fileSize}</span>
-                      <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-600">
-                        {item.format}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-semibold text-gray-900">
-                        {item.price === 0
-                          ? "Free"
-                          : `$${item.price.toFixed(2)}`}
-                      </span>
-                      <button className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium">
-                        Download
-                      </button>
-                    </div>
+                    <p className="text-xs text-gray-500">Since {store.since}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {displayItems.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">
-                  No miniatures found matching your filters.
+                <p className="text-sm text-gray-600 line-clamp-2">
+                  {store.description}
                 </p>
-              </div>
-            )}
+              </Link>
+            ))}
           </div>
         </div>
+
+        {/* Filters and Sort */}
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <div className="flex items-center gap-4 flex-wrap">
+            <span className="text-sm text-gray-800 font-medium">
+              {displayItems.length} items
+            </span>
+
+            <select
+              value={filterStore}
+              onChange={(e) => setFilterStore(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                 bg-white text-gray-800 font-medium 
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Stores</option>
+              {STORES.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filterUnitType}
+              onChange={(e) => setFilterUnitType(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                 bg-white text-gray-800 font-medium 
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {unitTypes.map((type) => (
+                <option key={type} value={type.toLowerCase()}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-800 font-medium">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                 bg-white text-gray-800 font-medium 
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {sortOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Items Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {displayItems.map((item) => {
+            const store = STORES.find((s) => s.id === item.storeId);
+            return (
+              <Link
+                key={item.id}
+                href={`/item/${item.id}`}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      {item.army}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {item.unitType}
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {item.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    {item.description}
+                  </p>
+
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 bg-gray-900 rounded flex items-center justify-center shrink-0">
+                      {store?.logo ? (
+                        <img
+                          src={store.logo}
+                          alt={store.name}
+                          className="w-full h-full object-cover rounded"
+                        />
+                      ) : (
+                        <Store size={12} className="text-white" />
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">{store?.name}</span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {item.tags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                    <span className="flex items-center gap-1">
+                      <Download size={14} />
+                      {item.downloads}
+                    </span>
+                    <span>{item.fileSize}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl font-semibold text-gray-900">
+                      ${item.price.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {displayItems.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">
+              No items found matching your search.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
