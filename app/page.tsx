@@ -283,14 +283,6 @@ export default function MarketplacePage() {
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                    <span className="flex items-center gap-1">
-                      <Download size={14} />
-                      {item.downloads}
-                    </span>
-                    <span>{item.fileSize}</span>
-                  </div>
-
                   <div className="flex items-center justify-between">
                     <span className="text-xl font-semibold text-gray-900">
                       ${item.price.toFixed(2)}
