@@ -7,8 +7,8 @@ import { useParams } from "next/navigation";
 import {
   STORES,
   ALL_ITEMS,
-  getItemsByStore,
   getStoreById,
+  getManufacturerById,
   type Item,
 } from "@/lib/data";
 
@@ -28,8 +28,8 @@ export default function StorePage() {
       if (storedItems) {
         setStoreItems(JSON.parse(storedItems) as Item[]);
       } else {
-        // Fallback to default items
-        setStoreItems(getItemsByStore(storeId));
+        // Initialize with empty inventory
+        setStoreItems([]);
       }
     };
 
@@ -98,9 +98,14 @@ export default function StorePage() {
                   Since {store.since}
                 </span>
               </div>
-              <p className="text-gray-600 leading-relaxed mb-4">
+              <p className="text-gray-600 leading-relaxed mb-2">
                 {store.description}
               </p>
+              {store.owner && (
+                <p className="text-sm text-gray-500 mb-4">
+                  Owner: {store.owner}
+                </p>
+              )}
 
               <div className="flex gap-3">
                 <Link
@@ -123,7 +128,7 @@ export default function StorePage() {
               placeholder="Search this store..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white placeholder-gray-500"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
             />
           </div>
         </div>
@@ -137,64 +142,80 @@ export default function StorePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredItems.map((item) => (
-            <Link
-              key={item.id}
-              href={`/item/${item.id}`}
-              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                    {item.army}
-                  </span>
-                  <span className="text-xs text-gray-500">{item.unitType}</span>
-                </div>
+          {filteredItems.map((item) => {
+            const manufacturer = getManufacturerById(item.manufacturerId);
 
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {item.name}
-                </h3>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                  {item.description}
-                </p>
-
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {item.tags.slice(0, 3).map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded"
-                    >
-                      {tag}
+            return (
+              <Link
+                key={item.id}
+                href={`/item/${item.id}`}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      {item.army}
                     </span>
-                  ))}
-                </div>
+                    <span className="text-xs text-gray-500">
+                      {item.unitType}
+                    </span>
+                  </div>
 
-                <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                  <span className="flex items-center gap-1">
-                    <Download size={14} />
-                    {item.downloads}
-                  </span>
-                  <span>{item.fileSize}</span>
-                </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {item.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    {item.description}
+                  </p>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xl font-semibold text-gray-900">
-                    ${item.price.toFixed(2)}
-                  </span>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs text-blue-600">
+                      By {manufacturer?.name}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {item.tags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                    <span className="flex items-center gap-1">
+                      <Download size={14} />
+                      {item.downloads}
+                    </span>
+                    <span>{item.fileSize}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl font-semibold text-gray-900">
+                      ${item.price.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
 
         {filteredItems.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No items found in this store.</p>
+            <p className="text-gray-500">
+              {searchQuery
+                ? "No items found matching your search."
+                : "This store doesn't have any items yet. Visit the admin panel to add items."}
+            </p>
           </div>
         )}
       </div>

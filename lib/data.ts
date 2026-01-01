@@ -1,4 +1,4 @@
-// lib/data.ts - Shared data file with improved structure
+// lib/data.ts - Marketplace with Stores and Manufacturers
 
 export interface Item {
   id: number;
@@ -6,18 +6,23 @@ export interface Item {
   army: string;
   unitType: string;
   description: string;
-  price: number;
+  price: number; // Base price from manufacturer
   tags: string[];
   image: string;
   fileSize: string;
   downloads: number;
   format: string;
   type: string;
-  storeId: number;  // Which store created/sells this specific version
+  manufacturerId: number;
   link: string;
 }
 
-export interface StoreInfo {
+export interface StoreItemListing {
+  itemId: number;
+  storePrice: number; // Store sets their own price
+}
+
+export interface ManufacturerInfo {
   id: number;
   name: string;
   description: string;
@@ -26,7 +31,17 @@ export interface StoreInfo {
   website?: string;
 }
 
-export const STORES: StoreInfo[] = [
+export interface StoreInfo {
+  id: number;
+  name: string;
+  description: string;
+  since: string;
+  logo: string;
+  owner?: string;
+}
+
+// Manufacturers - creators of the miniatures
+export const MANUFACTURERS: ManufacturerInfo[] = [
   {
     id: 1,
     name: "Highlands Miniatures",
@@ -53,23 +68,51 @@ export const STORES: StoreInfo[] = [
   },
 ];
 
-// Each item is unique to a store - these are different versions from different creators
+// Stores - retailers that can sell items from any manufacturer at their own prices
+export const STORES: StoreInfo[] = [
+  {
+    id: 1,
+    name: "Epic Prints Shop",
+    description: "Your one-stop shop for quality 3D printable miniatures from top manufacturers. Premium pricing for premium service.",
+    since: "March 2023",
+    logo: "",
+    owner: "John Smith",
+  },
+  {
+    id: 2,
+    name: "Tabletop Treasures",
+    description: "Curated selection of the finest miniatures for discerning collectors. Competitive prices.",
+    since: "July 2023",
+    logo: "",
+    owner: "Sarah Johnson",
+  },
+  {
+    id: 3,
+    name: "Mini Market",
+    description: "Affordable miniatures for every tabletop gamer. Best prices guaranteed!",
+    since: "November 2023",
+    logo: "",
+    owner: "Mike Davis",
+  },
+];
+
+// All available items in the marketplace (created by manufacturers)
 export const ALL_ITEMS: Item[] = [
-  // Highlands Miniatures - Store 1
+  // Highlands Miniatures - Manufacturer 1
   {
     id: 1,
     name: "Knight of the realm",
     army: "Bretonnia",
     unitType: "Knight of the realm",
     description: "Elite mounted knights with ornate armor and lances. Perfect for leading your cavalry charges into battle.",
-    price: 12.99,
+    price: 12.99, // Base manufacturer price
     tags: ["bretonnia", "knight", "cavalry", "elite", "mounted", "medieval"],
     image: "https://dl2.myminifactory.com/object-assets/64da61f3468758.17214992/images/720X720-knights-of-gallia-highlands-miniatures.jpg",
     fileSize: "85 MB",
     downloads: 1247,
     format: "3D",
     type: "unit",
-    storeId: 1,
+    manufacturerId: 1,
     link: "https://www.myminifactory.com/object/3d-print-knights-of-gallia-highlands-miniatures-317902",
   },
   {
@@ -85,7 +128,7 @@ export const ALL_ITEMS: Item[] = [
     downloads: 892,
     format: "3D",
     type: "unit",
-    storeId: 1,
+    manufacturerId: 1,
     link: "https://www.myminifactory.com/object/3d-print-gallia-men-at-arms-highlands-miniatures-317913",
   },
   {
@@ -101,11 +144,11 @@ export const ALL_ITEMS: Item[] = [
     downloads: 756,
     format: "3D",
     type: "unit",
-    storeId: 1,
+    manufacturerId: 1,
     link: "https://www.myminifactory.com/object/3d-print-gallia-archers-highlands-miniatures-317911",
   },
 
-  // Lost Kingdom Miniatures - Store 2
+  // Lost Kingdom Miniatures - Manufacturer 2
   {
     id: 4,
     name: "Knight of the realm",
@@ -119,7 +162,7 @@ export const ALL_ITEMS: Item[] = [
     downloads: 634,
     format: "3D",
     type: "unit",
-    storeId: 2,
+    manufacturerId: 2,
     link: "https://www.lostkingdomminiatures.com/en/kingdom-of-mercia/346-393-spearmen-on-foot.html#/26-supports-pre_supported",
   },
   {
@@ -135,7 +178,7 @@ export const ALL_ITEMS: Item[] = [
     downloads: 523,
     format: "3D",
     type: "unit",
-    storeId: 2,
+    manufacturerId: 2,
     link: "https://www.lostkingdomminiatures.com/en/kingdom-of-mercia/346-393-spearmen-on-foot.html#/26-supports-pre_supported",
   },
   {
@@ -151,11 +194,11 @@ export const ALL_ITEMS: Item[] = [
     downloads: 489,
     format: "3D",
     type: "unit",
-    storeId: 2,
+    manufacturerId: 2,
     link: "https://www.lostkingdomminiatures.com/en/kingdom-of-mercia/337-375-bowmen-on-foot.html#/26-supports-pre_supported",
   },
 
-  // Monstrous Encounters - Store 3
+  // Monstrous Encounters - Manufacturer 3
   {
     id: 7,
     name: "Knight of the realm",
@@ -169,7 +212,7 @@ export const ALL_ITEMS: Item[] = [
     downloads: 1456,
     format: "3D",
     type: "unit",
-    storeId: 3,
+    manufacturerId: 3,
     link: "https://www.myminifactory.com/object/3d-print-breton-knights-of-virtue-174834",
   },
   {
@@ -185,7 +228,7 @@ export const ALL_ITEMS: Item[] = [
     downloads: 821,
     format: "3D",
     type: "unit",
-    storeId: 3,
+    manufacturerId: 3,
     link: "https://www.myminifactory.com/object/3d-print-breton-men-at-arms-unit-141217",
   },
   {
@@ -201,19 +244,56 @@ export const ALL_ITEMS: Item[] = [
     downloads: 672,
     format: "3D",
     type: "unit",
-    storeId: 3,
+    manufacturerId: 3,
     link: "https://www.myminifactory.com/object/3d-print-breton-squires-unit-149195",
   },
 ];
 
-// Helper function to get items by store
-export function getItemsByStore(storeId: number): Item[] {
-  return ALL_ITEMS.filter(item => item.storeId === storeId);
+// Default store inventories with store-specific pricing
+// Format: { itemId: X, storePrice: Y }
+export const DEFAULT_STORE_INVENTORIES: Record<number, StoreItemListing[]> = {
+  1: [ // Epic Prints Shop - Premium pricing
+    { itemId: 1, storePrice: 14.99 }, // +$2 markup
+    { itemId: 2, storePrice: 10.49 }, // +$1.50 markup
+    { itemId: 4, storePrice: 12.99 }, // +$2 markup
+    { itemId: 7, storePrice: 16.99 }, // +$2 markup
+  ],
+  2: [ // Tabletop Treasures - Mid-range pricing
+    { itemId: 1, storePrice: 13.49 }, // +$0.50 markup
+    { itemId: 3, storePrice: 9.49 },  // +$0.50 markup
+    { itemId: 5, storePrice: 8.49 },  // +$0.50 markup
+    { itemId: 8, storePrice: 10.49 }, // +$0.50 markup
+  ],
+  3: [ // Mini Market - Budget pricing (discounts!)
+    { itemId: 2, storePrice: 7.99 },  // -$1 discount
+    { itemId: 4, storePrice: 9.99 },  // -$1 discount
+    { itemId: 6, storePrice: 6.99 },  // -$1 discount
+    { itemId: 9, storePrice: 8.99 },  // -$1 discount
+  ],
+};
+
+// Helper function to get items for a store with store-specific pricing
+export function getDefaultStoreItems(storeId: number): Item[] {
+  const listings = DEFAULT_STORE_INVENTORIES[storeId] || [];
+  return listings.map(listing => {
+    const item = ALL_ITEMS.find(i => i.id === listing.itemId);
+    if (!item) return null;
+    // Return item with store's price
+    return {
+      ...item,
+      price: listing.storePrice,
+    };
+  }).filter(Boolean) as Item[];
 }
 
-// Helper function to get items NOT in a specific store (for admin panel)
-export function getItemsNotInStore(storeId: number): Item[] {
-  return ALL_ITEMS.filter(item => item.storeId !== storeId);
+// Helper function to get items by manufacturer
+export function getItemsByManufacturer(manufacturerId: number): Item[] {
+  return ALL_ITEMS.filter(item => item.manufacturerId === manufacturerId);
+}
+
+// Helper function to get manufacturer by id
+export function getManufacturerById(manufacturerId: number): ManufacturerInfo | undefined {
+  return MANUFACTURERS.find(manufacturer => manufacturer.id === manufacturerId);
 }
 
 // Helper function to get store by id
@@ -221,7 +301,7 @@ export function getStoreById(storeId: number): StoreInfo | undefined {
   return STORES.find(store => store.id === storeId);
 }
 
-// Helper function to get item by id
+// Helper function to get item by id (returns base price)
 export function getItemById(itemId: number): Item | undefined {
   return ALL_ITEMS.find(item => item.id === itemId);
 }
@@ -238,9 +318,26 @@ export function searchItems(query: string): Item[] {
   );
 }
 
-// Helper function to search items by unit type (to find similar units across stores)
+// Helper function to search items by unit type (to find similar units across manufacturers)
 export function getItemsByUnitType(unitType: string): Item[] {
   return ALL_ITEMS.filter(item => 
     item.unitType.toLowerCase() === unitType.toLowerCase()
   );
+}
+
+// Helper function to get all stores selling a specific item with their prices
+export function getStoresSelling(itemId: number): Array<{store: StoreInfo, price: number}> {
+  const result: Array<{store: StoreInfo, price: number}> = [];
+  
+  Object.entries(DEFAULT_STORE_INVENTORIES).forEach(([storeId, listings]) => {
+    const listing = listings.find(l => l.itemId === itemId);
+    if (listing) {
+      const store = getStoreById(parseInt(storeId));
+      if (store) {
+        result.push({ store, price: listing.storePrice });
+      }
+    }
+  });
+  
+  return result;
 }

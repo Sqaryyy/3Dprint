@@ -1,124 +1,69 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Download, Store, ChevronRight, ShoppingCart } from "lucide-react";
-
-// Mock data types
-interface Item {
-  id: number;
-  name: string;
-  army: string;
-  unitType: string;
-  description: string;
-  price: number;
-  tags: string[];
-  image: string;
-  fileSize: string;
-  downloads: number;
-  format: string;
-  type: string;
-  storeId: number;
-  link: string;
-}
-
-interface StoreInfo {
-  id: number;
-  name: string;
-  description: string;
-  since: string;
-  logo: string;
-  website?: string;
-}
-
-// Mock data
-const mockItem: Item = {
-  id: 2,
-  name: "Man at arms",
-  army: "Bretonnia",
-  unitType: "Man at arms",
-  description:
-    "Brave infantry soldiers forming the backbone of your army. Armed with swords and shields for close combat.",
-  price: 8.99,
-  tags: [
-    "bretonnia",
-    "infantry",
-    "man at arms",
-    "core",
-    "medieval",
-    "foot soldiers",
-  ],
-  image:
-    "https://dl2.myminifactory.com/object-assets/64da74b083b991.88128358/images/720X720-gallia-men-at-arms-highlands-miniatures.jpg",
-  fileSize: "62 MB",
-  downloads: 892,
-  format: "3D",
-  type: "unit",
-  storeId: 1,
-  link: "https://www.myminifactory.com/object/3d-print-gallia-men-at-arms-highlands-miniatures-317913",
-};
-
-const mockStore: StoreInfo = {
-  id: 1,
-  name: "Highlands Miniatures",
-  description: "High-quality fantasy miniatures for tabletop wargaming.",
-  since: "January 2018",
-  logo: "",
-  website: "https://www.myminifactory.com/users/HighlandMiniatures",
-};
-
-const mockRelatedItems: Item[] = [
-  {
-    id: 1,
-    name: "Knight of the realm",
-    army: "Bretonnia",
-    unitType: "Knight of the realm",
-    description: "Elite mounted knights with ornate armor and lances.",
-    price: 12.99,
-    tags: ["bretonnia", "knight", "cavalry"],
-    image:
-      "https://dl2.myminifactory.com/object-assets/64da61f3468758.17214992/images/720X720-knights-of-gallia-highlands-miniatures.jpg",
-    fileSize: "85 MB",
-    downloads: 1247,
-    format: "3D",
-    type: "unit",
-    storeId: 1,
-    link: "",
-  },
-  {
-    id: 3,
-    name: "Bowmen",
-    army: "Bretonnia",
-    unitType: "Bowmen",
-    description: "Skilled archers providing ranged support.",
-    price: 8.99,
-    tags: ["bretonnia", "bowmen", "ranged"],
-    image:
-      "https://dl2.myminifactory.com/object-assets/64da6d6849bba5.21279537/images/720X720-gallian-archers-highlands-miniatures.jpg",
-    fileSize: "58 MB",
-    downloads: 756,
-    format: "3D",
-    type: "unit",
-    storeId: 1,
-    link: "",
-  },
-];
+import {
+  getItemById,
+  getManufacturerById,
+  getItemsByManufacturer,
+  type Item,
+  type ManufacturerInfo,
+} from "@/lib/data";
 
 export default function ItemPage() {
+  const params = useParams();
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
-  const item = mockItem;
-  const store = mockStore;
-  const relatedItems = mockRelatedItems;
+  const [item, setItem] = useState<Item | null>(null);
+  const [manufacturer, setManufacturer] = useState<ManufacturerInfo | null>(
+    null
+  );
+  const [relatedItems, setRelatedItems] = useState<Item[]>([]);
+
+  useEffect(() => {
+    const itemId = parseInt(params.id as string);
+
+    // Get the item
+    const foundItem = getItemById(itemId);
+    if (foundItem) {
+      setItem(foundItem);
+
+      // Get the manufacturer
+      const foundManufacturer = getManufacturerById(foundItem.manufacturerId);
+      setManufacturer(foundManufacturer || null);
+
+      // Get related items from the same manufacturer
+      if (foundManufacturer) {
+        const related = getItemsByManufacturer(foundManufacturer.id)
+          .filter((i) => i.id !== itemId)
+          .slice(0, 3);
+        setRelatedItems(related);
+      }
+    }
+  }, [params.id]);
 
   const handleQuantityChange = (delta: number) => {
     setQuantity(Math.max(1, quantity + delta));
   };
+
+  if (!item || !manufacturer) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+          <button
+            onClick={() => router.push("/")}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+          >
             ← Back to Marketplace
           </button>
         </div>
@@ -147,7 +92,6 @@ export default function ItemPage() {
               <h1 className="text-3xl font-bold text-gray-900 mb-3">
                 {item.name}
               </h1>
-
               <p className="text-gray-600 text-base leading-relaxed mb-6">
                 {item.description}
               </p>
@@ -210,27 +154,28 @@ export default function ItemPage() {
                   <ShoppingCart size={20} />
                   Add to Cart
                 </button>
-
-                <button className="w-full bg-gray-900 text-white py-3.5 rounded-lg hover:bg-gray-800 transition-colors font-semibold text-base shadow-sm">
-                  Buy Now
-                </button>
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-gray-900 text-white py-3.5 rounded-lg hover:bg-gray-800 transition-colors font-semibold text-base shadow-sm block text-center"
+                >
+                  View on {manufacturer.name}
+                </a>
               </div>
             </div>
 
-            {/* Store Info */}
+            {/* Manufacturer Info */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-                Sold by
+                Made by
               </h3>
-              <button
-                onClick={() => (window.location.href = `/store/${store.id}`)}
-                className="flex items-center gap-4 w-full hover:bg-gray-50 p-3 -m-3 rounded-lg transition-colors group"
-              >
+              <div className="flex items-center gap-4 w-full">
                 <div className="w-14 h-14 bg-gray-900 rounded-lg flex items-center justify-center shrink-0">
-                  {store.logo ? (
+                  {manufacturer.logo ? (
                     <img
-                      src={store.logo}
-                      alt={store.name}
+                      src={manufacturer.logo}
+                      alt={manufacturer.name}
                       className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (
@@ -239,15 +184,23 @@ export default function ItemPage() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-semibold text-gray-900 text-base mb-0.5">
-                    {store.name}
+                    {manufacturer.name}
                   </p>
-                  <p className="text-sm text-gray-500">Since {store.since}</p>
+                  <p className="text-sm text-gray-500">
+                    Since {manufacturer.since}
+                  </p>
                 </div>
-                <ChevronRight
-                  size={20}
-                  className="text-gray-400 group-hover:text-gray-600 transition-colors"
-                />
-              </button>
+              </div>
+              {manufacturer.website && (
+                <a
+                  href={manufacturer.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 w-full bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm block text-center"
+                >
+                  Visit Website
+                </a>
+              )}
             </div>
 
             {/* Product Details */}
@@ -274,26 +227,26 @@ export default function ItemPage() {
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
                   <span className="text-sm text-gray-600 font-medium">
-                    Material
+                    File Size
                   </span>
                   <span className="text-sm text-gray-900 font-semibold">
-                    High-Quality Resin
+                    {item.fileSize}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
                   <span className="text-sm text-gray-600 font-medium">
-                    Scale
+                    Format
                   </span>
                   <span className="text-sm text-gray-900 font-semibold">
-                    28mm
+                    {item.format}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm text-gray-600 font-medium">
-                    Assembly
+                    Downloads
                   </span>
                   <span className="text-sm text-gray-900 font-semibold">
-                    Required
+                    {item.downloads.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -306,7 +259,7 @@ export default function ItemPage() {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                More from {store.name}
+                More from {manufacturer.name}
               </h2>
               <p className="text-gray-600">
                 Discover other miniatures from this creator
@@ -316,6 +269,7 @@ export default function ItemPage() {
               {relatedItems.map((relatedItem) => (
                 <button
                   key={relatedItem.id}
+                  onClick={() => router.push(`/item/${relatedItem.id}`)}
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 text-left group"
                 >
                   <div className="aspect-square w-full overflow-hidden bg-gray-100">
