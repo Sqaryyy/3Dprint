@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, X, Search, DollarSign } from "lucide-react";
+import { Plus, X, Search, DollarSign, Store, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -14,6 +14,19 @@ import {
   type Item,
   type StoreInfo,
 } from "@/lib/data";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export default function AdminPage() {
   const params = useParams();
@@ -38,7 +51,7 @@ export default function AdminPage() {
       setStoreItems(defaultItems);
       sessionStorage.setItem(
         `store_${storeId}_items`,
-        JSON.stringify(defaultItems)
+        JSON.stringify(defaultItems),
       );
     }
 
@@ -108,7 +121,7 @@ export default function AdminPage() {
 
   const updateItemPrice = (itemId: number, newPrice: number) => {
     const updatedItems = storeItems.map((item) =>
-      item.id === itemId ? { ...item, price: newPrice } : item
+      item.id === itemId ? { ...item, price: newPrice } : item,
     );
     saveStoreItems(updatedItems);
   };
@@ -119,295 +132,319 @@ export default function AdminPage() {
         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.army.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.unitType.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      !hasItem(item.id) // Only show items not already in store
+      !hasItem(item.id), // Only show items not already in store
   );
 
   if (!storeInfo) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Store not found
-          </h1>
-          <Link href="/" className="text-blue-600 hover:text-blue-700">
-            Back to Marketplace
-          </Link>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Store className="h-12 w-12 text-muted-foreground mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Store not found</h1>
+            <Button asChild variant="link">
+              <Link href="/">Back to Marketplace</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-900">
+            <h1 className="text-3xl font-bold tracking-tight">
               Admin Panel - {storeInfo.name}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-muted-foreground mt-1">
               Add items from any manufacturer and set your own prices
             </p>
           </div>
           <div className="flex gap-3">
-            <Link
-              href={`/store/${storeId}`}
-              className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-            >
-              View Store
-            </Link>
-            <Link
-              href="/"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Marketplace
-            </Link>
+            <Button variant="secondary" asChild>
+              <Link href={`/store/${storeId}`}>View Store</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/">Marketplace</Link>
+            </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Available Items - Add to Store */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-900">
-              Available Items from All Manufacturers
-            </h2>
-
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={20}
-              />
-              <input
-                type="text"
-                placeholder="Search available items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-gray-900"
-              />
-            </div>
-
-            <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {filteredAvailableItems.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  {searchQuery
-                    ? "No items match your search."
-                    : "All items are already in your store!"}
-                </p>
-              ) : (
-                filteredAvailableItems.map((item) => {
-                  const manufacturer = getManufacturerById(item.manufacturerId);
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="border rounded-lg p-4 border-gray-200 hover:border-gray-400 transition-colors"
-                    >
-                      <div className="flex gap-3">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-20 h-20 object-cover rounded"
-                        />
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">
-                            {item.name}
-                          </h3>
-                          <p className="text-sm text-gray-600 line-clamp-1">
-                            {item.description}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {item.army} • {item.unitType} • {item.format}
-                          </p>
-                          <p className="text-xs text-blue-600 mt-1">
-                            By {manufacturer?.name}
-                          </p>
-                          <div className="flex items-center justify-between mt-2">
-                            <div>
-                              <span className="text-xs text-gray-500 block">
-                                Base price:
-                              </span>
-                              <span className="font-semibold text-gray-900">
-                                ${item.price.toFixed(2)}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => openPriceModal(item)}
-                              className="flex items-center gap-1 bg-gray-900 text-white px-3 py-1 rounded text-sm hover:bg-gray-800 transition-colors"
-                            >
-                              <Plus size={16} />
-                              Add to Store
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Current Store Items */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-900">
-              Your Store Inventory ({storeItems.length})
-            </h2>
-            <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {storeItems.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  No items in your store yet. Add items from the available list.
-                </p>
-              ) : (
-                storeItems.map((item) => {
-                  const manufacturer = getManufacturerById(item.manufacturerId);
-                  const baseItem = ALL_ITEMS.find((i) => i.id === item.id);
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:border-gray-400 transition-colors"
-                    >
-                      <div className="flex gap-3">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-20 h-20 object-cover rounded"
-                        />
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-semibold text-gray-900">
-                                {item.name}
-                              </h3>
-                              <p className="text-sm text-gray-600 line-clamp-1">
-                                {item.description}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {item.army} • {item.unitType} • {item.format}
-                              </p>
-                              <p className="text-xs text-blue-600 mt-1">
-                                By {manufacturer?.name}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => removeItemFromStore(item.id)}
-                              className="text-gray-400 hover:text-red-600 ml-2"
-                            >
-                              <X size={20} />
-                            </button>
-                          </div>
-                          <div className="mt-2 flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <DollarSign size={16} className="text-gray-400" />
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.price.toFixed(2)}
-                                onChange={(e) => {
-                                  const newPrice = parseFloat(e.target.value);
-                                  if (!isNaN(newPrice)) {
-                                    updateItemPrice(item.id, newPrice);
-                                  }
-                                }}
-                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              />
-                            </div>
-                            {baseItem && item.price !== baseItem.price && (
-                              <span className="text-xs text-gray-500">
-                                (Base: ${baseItem.price.toFixed(2)})
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Price Modal */}
-      {showPriceModal && selectedItem && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={closePriceModal}
-          />
-
-          {/* Modal Content */}
-          <div className="bg-white rounded-lg max-w-md w-full p-6 relative z-10">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
-              Set Your Price
-            </h3>
-
-            <div className="mb-4">
-              <img
-                src={selectedItem.image}
-                alt={selectedItem.name}
-                className="w-full h-48 object-cover rounded-lg mb-3"
-              />
-              <h4 className="font-semibold text-gray-900">
-                {selectedItem.name}
-              </h4>
-              <p className="text-sm text-gray-600">
-                {selectedItem.description}
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Manufacturer's Base Price:{" "}
-                <span className="font-semibold">
-                  ${selectedItem.price.toFixed(2)}
-                </span>
-              </label>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Store Price:
-              </label>
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Items from All Manufacturers</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Search */}
               <div className="relative">
-                <DollarSign
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={customPrice}
-                  onChange={(e) => setCustomPrice(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 font-semibold text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="0.00"
-                  autoFocus
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search available items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                You can set any price - higher or lower than the base price
-              </p>
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={closePriceModal}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmAddItem}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                Add to Store
-              </button>
-            </div>
-          </div>
+              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                {filteredAvailableItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">
+                      {searchQuery
+                        ? "No items match your search."
+                        : "All items are already in your store!"}
+                    </p>
+                  </div>
+                ) : (
+                  filteredAvailableItems.map((item) => {
+                    const manufacturer = getManufacturerById(
+                      item.manufacturerId,
+                    );
+
+                    return (
+                      <Card
+                        key={item.id}
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex gap-3">
+                            <div className="w-20 h-20 shrink-0 bg-muted rounded-lg overflow-hidden">
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold line-clamp-1">
+                                {item.name}
+                              </h3>
+                              <p className="text-sm text-muted-foreground line-clamp-1">
+                                {item.description}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <Badge variant="secondary" className="text-xs">
+                                  {item.army}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {item.unitType}
+                                </span>
+                              </div>
+                              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                By {manufacturer?.name}
+                              </p>
+                              <div className="flex items-center justify-between mt-2">
+                                <div>
+                                  <span className="text-xs text-muted-foreground block">
+                                    Base price:
+                                  </span>
+                                  <span className="font-semibold">
+                                    ${item.price.toFixed(2)}
+                                  </span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => openPriceModal(item)}
+                                  className="gap-1"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  Add
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Current Store Items */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Store Inventory ({storeItems.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                {storeItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Store className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">
+                      No items in your store yet. Add items from the available
+                      list.
+                    </p>
+                  </div>
+                ) : (
+                  storeItems.map((item) => {
+                    const manufacturer = getManufacturerById(
+                      item.manufacturerId,
+                    );
+                    const baseItem = ALL_ITEMS.find((i) => i.id === item.id);
+
+                    return (
+                      <Card
+                        key={item.id}
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex gap-3">
+                            <div className="w-20 h-20 shrink-0 bg-muted rounded-lg overflow-hidden">
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-semibold line-clamp-1">
+                                    {item.name}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground line-clamp-1">
+                                    {item.description}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      {item.army}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      {item.unitType}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                    By {manufacturer?.name}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeItemFromStore(item.id)}
+                                  className="text-muted-foreground hover:text-destructive shrink-0"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="mt-2 flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.price.toFixed(2)}
+                                    onChange={(e) => {
+                                      const newPrice = parseFloat(
+                                        e.target.value,
+                                      );
+                                      if (!isNaN(newPrice)) {
+                                        updateItemPrice(item.id, newPrice);
+                                      }
+                                    }}
+                                    className="w-24 h-8 text-sm font-semibold"
+                                  />
+                                </div>
+                                {baseItem && item.price !== baseItem.price && (
+                                  <span className="text-xs text-muted-foreground">
+                                    (Base: ${baseItem.price.toFixed(2)})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      )}
+      </div>
+
+      {/* Price Modal */}
+      <Dialog open={showPriceModal} onOpenChange={setShowPriceModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Your Price</DialogTitle>
+            <DialogDescription>
+              Choose a price for this item in your store
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedItem && (
+            <div className="space-y-4">
+              <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden">
+                <img
+                  src={selectedItem.image}
+                  alt={selectedItem.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <h4 className="font-semibold">{selectedItem.name}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {selectedItem.description}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Manufacturer's Base Price:
+                  </span>
+                  <span className="font-semibold">
+                    ${selectedItem.price.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom-price">Your Store Price:</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="custom-price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={customPrice}
+                      onChange={(e) => setCustomPrice(e.target.value)}
+                      className="pl-10 font-semibold text-lg"
+                      placeholder="0.00"
+                      autoFocus
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    You can set any price - higher or lower than the base price
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={closePriceModal}>
+              Cancel
+            </Button>
+            <Button onClick={confirmAddItem}>Add to Store</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
