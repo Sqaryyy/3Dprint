@@ -31,7 +31,11 @@ export default function MarketplacePage() {
   const [sortBy, setSortBy] = useState("popular");
   const [filterManufacturer, setFilterManufacturer] = useState("all");
   const [filterUnitType, setFilterUnitType] = useState("all");
+  const [filterStore, setFilterStore] = useState("all");
   const [allListings, setAllListings] = useState<ItemListing[]>([]);
+  const [shuffledOrder, setShuffledOrder] = useState<Map<string, number>>(
+    new Map(),
+  );
 
   useEffect(() => {
     // Load all item listings from all stores
@@ -60,6 +64,26 @@ export default function MarketplacePage() {
       });
 
       setAllListings(listings);
+
+      // Assign a stable random order once per listing — never changes after first assignment
+      setShuffledOrder((prev) => {
+        const next = new Map(prev);
+        listings.forEach((l) => {
+          const key = `${l.storeId}-${l.id}`;
+          if (!next.has(key)) next.set(key, Math.random());
+        });
+        return next;
+      });
+
+      // Assign a stable random order once — keyed by storeId+itemId
+      setShuffledOrder((prev) => {
+        const next = new Map(prev);
+        listings.forEach((l) => {
+          const key = `${l.storeId}-${l.id}`;
+          if (!next.has(key)) next.set(key, Math.random());
+        });
+        return next;
+      });
     };
 
     // Initialize default store inventories in sessionStorage if not present
@@ -117,12 +141,23 @@ export default function MarketplacePage() {
         filterUnitType === "all" ||
         filterUnitType.toLowerCase() === listing.unitType.toLowerCase();
 
-      return matchesSearch && matchesManufacturer && matchesUnitType;
+      const matchesStore =
+        filterStore === "all" || listing.storeId.toString() === filterStore;
+
+      return (
+        matchesSearch && matchesManufacturer && matchesUnitType && matchesStore
+      );
     });
 
     switch (sortBy) {
       case "popular":
-        result.sort((a, b) => b.downloads - a.downloads);
+        result.sort((a, b) => {
+          const aKey = `${a.storeId}-${a.id}`;
+          const bKey = `${b.storeId}-${b.id}`;
+          return (
+            (shuffledOrder.get(aKey) ?? 0) - (shuffledOrder.get(bKey) ?? 0)
+          );
+        });
         break;
       case "price-low":
         result.sort((a, b) => a.price - b.price);
@@ -171,17 +206,38 @@ export default function MarketplacePage() {
         <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-4 flex-wrap">
             <span className="text-sm font-medium text-muted-foreground">
-              {displayListings.length} {displayListings.length === 1 ? 'listing' : 'listings'}
+              {displayListings.length}{" "}
+              {displayListings.length === 1 ? "listing" : "listings"}
             </span>
 
-            <Select value={filterManufacturer} onValueChange={setFilterManufacturer}>
+            <Select value={filterStore} onValueChange={setFilterStore}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All Stores" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stores</SelectItem>
+                {STORES.map((store) => (
+                  <SelectItem key={store.id} value={store.id.toString()}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={filterManufacturer}
+              onValueChange={setFilterManufacturer}
+            >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="All Manufacturers" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Manufacturers</SelectItem>
                 {MANUFACTURERS.map((manufacturer) => (
-                  <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                  <SelectItem
+                    key={manufacturer.id}
+                    value={manufacturer.id.toString()}
+                  >
                     {manufacturer.name}
                   </SelectItem>
                 ))}
@@ -203,7 +259,9 @@ export default function MarketplacePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              Sort by:
+            </span>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue />

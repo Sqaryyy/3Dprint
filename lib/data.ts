@@ -9,8 +9,6 @@ export interface Item {
   price: number; // Base price from manufacturer
   tags: string[];
   image: string;
-  fileSize: string;
-  downloads: number;
   format: string;
   type: string;
   manufacturerId: number;
@@ -108,8 +106,6 @@ export const ALL_ITEMS: Item[] = [
     price: 12.99, // Base manufacturer price
     tags: ["bretonnia", "knight", "cavalry", "elite", "mounted", "medieval"],
     image: "https://dl2.myminifactory.com/object-assets/64da61f3468758.17214992/images/720X720-knights-of-gallia-highlands-miniatures.jpg",
-    fileSize: "85 MB",
-    downloads: 1247,
     format: "3D",
     type: "unit",
     manufacturerId: 1,
@@ -124,8 +120,6 @@ export const ALL_ITEMS: Item[] = [
     price: 8.99,
     tags: ["bretonnia", "infantry", "man at arms", "core", "medieval", "foot soldiers"],
     image: "https://dl2.myminifactory.com/object-assets/64da74b083b991.88128358/images/720X720-gallia-men-at-arms-highlands-miniatures.jpg",
-    fileSize: "62 MB",
-    downloads: 892,
     format: "3D",
     type: "unit",
     manufacturerId: 1,
@@ -140,8 +134,6 @@ export const ALL_ITEMS: Item[] = [
     price: 8.99,
     tags: ["bretonnia", "bowmen", "ranged", "archers", "medieval", "support"],
     image: "https://dl2.myminifactory.com/object-assets/64da6d6849bba5.21279537/images/720X720-gallian-archers-highlands-miniatures.jpg",
-    fileSize: "58 MB",
-    downloads: 756,
     format: "3D",
     type: "unit",
     manufacturerId: 1,
@@ -158,8 +150,6 @@ export const ALL_ITEMS: Item[] = [
     price: 10.99,
     tags: ["bretonnia", "knight", "spearmen", "heavy infantry", "pre-supported", "historical"],
     image: "https://www.lostkingdomminiatures.com/362-large_default/spearmen-on-foot.jpg",
-    fileSize: "72 MB",
-    downloads: 634,
     format: "3D",
     type: "unit",
     manufacturerId: 2,
@@ -174,8 +164,6 @@ export const ALL_ITEMS: Item[] = [
     price: 7.99,
     tags: ["bretonnia", "man at arms", "spearmen", "infantry", "pre-supported", "defensive"],
     image: "https://www.lostkingdomminiatures.com/362-large_default/spearmen-on-foot.jpg",
-    fileSize: "68 MB",
-    downloads: 523,
     format: "3D",
     type: "unit",
     manufacturerId: 2,
@@ -190,8 +178,6 @@ export const ALL_ITEMS: Item[] = [
     price: 7.99,
     tags: ["bretonnia", "bowmen", "archers", "ranged", "pre-supported", "longbow"],
     image: "https://www.lostkingdomminiatures.com/360-large_default/bowmen-on-foot.jpg",
-    fileSize: "64 MB",
-    downloads: 489,
     format: "3D",
     type: "unit",
     manufacturerId: 2,
@@ -208,8 +194,6 @@ export const ALL_ITEMS: Item[] = [
     price: 14.99,
     tags: ["bretonnia", "knight", "cavalry", "hero", "elite", "virtue", "blessed"],
     image: "https://dl2.myminifactory.com/object-assets/60d0962870d3d/images/720X720-Breon%20Knights%20of%20Virtue%201.png",
-    fileSize: "95 MB",
-    downloads: 1456,
     format: "3D",
     type: "unit",
     manufacturerId: 3,
@@ -224,8 +208,6 @@ export const ALL_ITEMS: Item[] = [
     price: 9.99,
     tags: ["bretonnia", "man at arms", "infantry", "unit", "peasants", "formation"],
     image: "https://dl2.myminifactory.com/object-assets/5fa953b48d78c/images/720X720-Breton%20Men%20At%20Arms%201.png",
-    fileSize: "78 MB",
-    downloads: 821,
     format: "3D",
     type: "unit",
     manufacturerId: 3,
@@ -240,8 +222,6 @@ export const ALL_ITEMS: Item[] = [
     price: 9.99,
     tags: ["bretonnia", "bowmen", "squires", "ranged", "youth", "support"],
     image: "https://dl2.myminifactory.com/object-assets/5ffb6d2367566/images/720X720-bret-squires-c-1.jpg",
-    fileSize: "71 MB",
-    downloads: 672,
     format: "3D",
     type: "unit",
     manufacturerId: 3,

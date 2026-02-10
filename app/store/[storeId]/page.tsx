@@ -1,16 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Download, Store, ArrowLeft } from "lucide-react";
+import { Search, Store, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import {
-  STORES,
-  ALL_ITEMS,
-  getStoreById,
-  getManufacturerById,
-  type Item,
-} from "@/lib/data";
+import { getStoreById, getManufacturerById, type Item } from "@/lib/data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,20 +20,17 @@ export default function StorePage() {
   const store = getStoreById(storeId);
 
   useEffect(() => {
-    // Load items for this store
     const loadItems = () => {
       const storedItems = sessionStorage.getItem(`store_${storeId}_items`);
       if (storedItems) {
         setStoreItems(JSON.parse(storedItems) as Item[]);
       } else {
-        // Initialize with empty inventory
         setStoreItems([]);
       }
     };
 
     loadItems();
 
-    // Refresh when storage changes
     const interval = setInterval(loadItems, 1000);
     return () => clearInterval(interval);
   }, [storeId]);
@@ -104,12 +95,6 @@ export default function StorePage() {
               <p className="text-muted-foreground leading-relaxed mb-2">
                 {store.description}
               </p>
-              {store.owner && (
-                <p className="text-sm text-muted-foreground mb-4">
-                  Owner: {store.owner}
-                </p>
-              )}
-
               <div className="flex gap-3">
                 <Button asChild>
                   <Link href={`/store/${storeId}/admin`}>Manage Store</Link>
@@ -182,14 +167,6 @@ export default function StorePage() {
                           {tag}
                         </Badge>
                       ))}
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Download className="h-3.5 w-3.5" />
-                        {item.downloads.toLocaleString()}
-                      </span>
-                      <span>{item.fileSize}</span>
                     </div>
 
                     <div className="pt-2 border-t">
