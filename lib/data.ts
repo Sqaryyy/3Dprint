@@ -3,6 +3,7 @@
 export interface Item {
   id: number;
   name: string;
+  gameSystem: string;
   army: string;
   unitType: string;
   description: string;
@@ -12,7 +13,6 @@ export interface Item {
   format: string;
   type: string;
   manufacturerId: number;
-  link: string;
 }
 
 export interface StoreItemListing {
@@ -100,6 +100,7 @@ export const ALL_ITEMS: Item[] = [
   {
     id: 1,
     name: "Knight of the realm",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Knight of the realm",
     description: "Elite mounted knights with ornate armor and lances. Perfect for leading your cavalry charges into battle.",
@@ -109,11 +110,11 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 1,
-    link: "https://www.myminifactory.com/object/3d-print-knights-of-gallia-highlands-miniatures-317902",
   },
   {
     id: 2,
     name: "Man at arms",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Man at arms",
     description: "Brave infantry soldiers forming the backbone of your army. Armed with swords and shields for close combat.",
@@ -123,11 +124,11 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 1,
-    link: "https://www.myminifactory.com/object/3d-print-gallia-men-at-arms-highlands-miniatures-317913",
   },
   {
     id: 3,
     name: "Bowmen",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Bowmen",
     description: "Skilled archers providing ranged support. Essential for softening enemy lines before the charge.",
@@ -137,13 +138,13 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 1,
-    link: "https://www.myminifactory.com/object/3d-print-gallia-archers-highlands-miniatures-317911",
   },
 
   // Lost Kingdom Miniatures - Manufacturer 2
   {
     id: 4,
     name: "Knight of the realm",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Knight of the realm",
     description: "Noble warriors on foot with spears and heavy armor. Versatile cavalry that can fight dismounted.",
@@ -153,11 +154,11 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 2,
-    link: "https://www.lostkingdomminiatures.com/en/kingdom-of-mercia/346-393-spearmen-on-foot.html#/26-supports-pre_supported",
   },
   {
     id: 5,
     name: "Man at arms",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Man at arms",
     description: "Reliable spear-wielding infantry forming defensive lines. Pre-supported files included for easy printing.",
@@ -167,11 +168,11 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 2,
-    link: "https://www.lostkingdomminiatures.com/en/kingdom-of-mercia/346-393-spearmen-on-foot.html#/26-supports-pre_supported",
   },
   {
     id: 6,
     name: "Bowmen",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Bowmen",
     description: "Expert longbowmen raining arrows on the enemy. Detailed models with dynamic poses.",
@@ -181,13 +182,13 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 2,
-    link: "https://www.lostkingdomminiatures.com/en/kingdom-of-mercia/337-375-bowmen-on-foot.html#/26-supports-pre_supported",
   },
 
   // Monstrous Encounters - Manufacturer 3
   {
     id: 7,
     name: "Knight of the realm",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Knight of the realm",
     description: "Heroic knights blessed with divine virtue. Highly detailed models with ornate heraldry and weapons.",
@@ -197,11 +198,11 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 3,
-    link: "https://www.myminifactory.com/object/3d-print-breton-knights-of-virtue-174834",
   },
   {
     id: 8,
     name: "Man at arms",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Man at arms",
     description: "Complete unit of peasant soldiers. Includes multiple pose variations for dynamic formations.",
@@ -211,11 +212,11 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 3,
-    link: "https://www.myminifactory.com/object/3d-print-breton-men-at-arms-unit-141217",
   },
   {
     id: 9,
     name: "Bowmen",
+    gameSystem: "Warhammer Old World",
     army: "Bretonnia",
     unitType: "Bowmen",
     description: "Young squires serving as archers. Versatile unit suitable for ranged support or light infantry.",
@@ -225,7 +226,6 @@ export const ALL_ITEMS: Item[] = [
     format: "3D",
     type: "unit",
     manufacturerId: 3,
-    link: "https://www.myminifactory.com/object/3d-print-breton-squires-unit-149195",
   },
 ];
 

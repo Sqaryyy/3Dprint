@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Search, Store as StoreIcon } from "lucide-react";
 import Link from "next/link";
 import {
   MANUFACTURERS,
   STORES,
+  ALL_ITEMS,
   getDefaultStoreItems,
   type Item,
 } from "@/lib/data";
@@ -20,62 +21,59 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
-// Extended item type that includes store information
 interface ItemListing extends Item {
   storeId: number;
   storeName: string;
 }
 
+function CardImage({ src, alt }: { src: string; alt: string }) {
+  const [errored, setErrored] = React.useState(false);
+  if (!src.trim() || errored) {
+    return (
+      <div className="aspect-video w-full bg-muted flex items-center justify-center">
+        <StoreIcon className="h-10 w-10 text-muted-foreground" />
+      </div>
+    );
+  }
+  return (
+    <div className="aspect-video relative overflow-hidden bg-muted">
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+        onError={() => setErrored(true)}
+      />
+    </div>
+  );
+}
+
 export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("popular");
-  const [filterManufacturer, setFilterManufacturer] = useState("all");
+  const [filterGameSystem, setFilterGameSystem] = useState("all");
+  const [filterArmy, setFilterArmy] = useState("all");
   const [filterUnitType, setFilterUnitType] = useState("all");
+  const [filterManufacturer, setFilterManufacturer] = useState("all");
   const [filterStore, setFilterStore] = useState("all");
   const [allListings, setAllListings] = useState<ItemListing[]>([]);
   const [shuffledOrder, setShuffledOrder] = useState<Map<string, number>>(
     new Map(),
   );
+  const [visibleCount, setVisibleCount] = useState(12);
 
   useEffect(() => {
-    // Load all item listings from all stores
     const loadAllListings = () => {
       const listings: ItemListing[] = [];
-
       STORES.forEach((store) => {
-        const storedItems = sessionStorage.getItem(`store_${store.id}_items`);
-        let storeItems: Item[] = [];
-
-        if (storedItems) {
-          storeItems = JSON.parse(storedItems);
-        } else {
-          // Use default store inventory
-          storeItems = getDefaultStoreItems(store.id);
-        }
-
-        // Add each item from this store as a separate listing
-        storeItems.forEach((item) => {
-          listings.push({
-            ...item,
-            storeId: store.id,
-            storeName: store.name,
-          });
-        });
+        const stored = sessionStorage.getItem(`store_${store.id}_items`);
+        const storeItems: Item[] = stored
+          ? JSON.parse(stored)
+          : getDefaultStoreItems(store.id);
+        storeItems.forEach((item) =>
+          listings.push({ ...item, storeId: store.id, storeName: store.name }),
+        );
       });
-
       setAllListings(listings);
-
-      // Assign a stable random order once per listing — never changes after first assignment
-      setShuffledOrder((prev) => {
-        const next = new Map(prev);
-        listings.forEach((l) => {
-          const key = `${l.storeId}-${l.id}`;
-          if (!next.has(key)) next.set(key, Math.random());
-        });
-        return next;
-      });
-
-      // Assign a stable random order once — keyed by storeId+itemId
       setShuffledOrder((prev) => {
         const next = new Map(prev);
         listings.forEach((l) => {
@@ -86,72 +84,93 @@ export default function MarketplacePage() {
       });
     };
 
-    // Initialize default store inventories in sessionStorage if not present
     STORES.forEach((store) => {
       const key = `store_${store.id}_items`;
       if (!sessionStorage.getItem(key)) {
-        const defaultItems = getDefaultStoreItems(store.id);
-        sessionStorage.setItem(key, JSON.stringify(defaultItems));
+        sessionStorage.setItem(
+          key,
+          JSON.stringify(getDefaultStoreItems(store.id)),
+        );
       }
     });
 
-    // Load all listings initially
     loadAllListings();
-
-    // Listen for storage changes (when admin updates items)
-    const handleStorageChange = () => {
-      loadAllListings();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    // Also check periodically for sessionStorage changes
+    window.addEventListener("storage", loadAllListings);
     const interval = setInterval(loadAllListings, 1000);
-
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("storage", loadAllListings);
       clearInterval(interval);
     };
   }, []);
 
-  const sortOptions = [
-    { value: "popular", label: "Most Popular" },
-    { value: "price-low", label: "Price: Low to High" },
-    { value: "price-high", label: "Price: High to Low" },
-  ];
+  // Use ALL_ITEMS as the base so options are available immediately on first render
+  // (allListings is populated async from sessionStorage — it's empty on the first paint).
+  // Custom store-created items that exist only in sessionStorage get merged in via allListings.
+  const itemsPool = useMemo(() => {
+    const combined = [
+      ...ALL_ITEMS,
+      ...allListings.filter((l) => l.manufacturerId === 0),
+    ];
+    return combined;
+  }, [allListings]);
 
-  const unitTypes = ["All", "Knight of the realm", "Man at arms", "Bowmen"];
+  const allGameSystems = useMemo(
+    () =>
+      [...new Set(itemsPool.map((l) => l.gameSystem).filter(Boolean))].sort(),
+    [itemsPool],
+  );
 
-  const filteredAndSortedListings = () => {
+  const allArmies = useMemo(
+    () => [...new Set(itemsPool.map((l) => l.army))].sort(),
+    [itemsPool],
+  );
+
+  const allUnitTypes = useMemo(
+    () => [...new Set(itemsPool.map((l) => l.unitType))].sort(),
+    [itemsPool],
+  );
+
+  const displayListings = useMemo(() => {
     let result = allListings.filter((listing) => {
+      const q = searchQuery.toLowerCase();
       const matchesSearch =
-        listing.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        listing.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        listing.army.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        listing.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        listing.tags.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
+        !q ||
+        listing.name.toLowerCase().includes(q) ||
+        listing.description.toLowerCase().includes(q) ||
+        listing.army.toLowerCase().includes(q) ||
+        listing.gameSystem?.toLowerCase().includes(q) ||
+        listing.storeName.toLowerCase().includes(q) ||
+        listing.tags.some((t) => t.toLowerCase().includes(q));
+
+      const matchesGameSystem =
+        filterGameSystem === "all" || listing.gameSystem === filterGameSystem;
+
+      const matchesArmy = filterArmy === "all" || listing.army === filterArmy;
+
+      const matchesUnitType =
+        filterUnitType === "all" ||
+        listing.unitType.toLowerCase() === filterUnitType.toLowerCase();
 
       const matchesManufacturer =
         filterManufacturer === "all" ||
         listing.manufacturerId === parseInt(filterManufacturer);
 
-      const matchesUnitType =
-        filterUnitType === "all" ||
-        filterUnitType.toLowerCase() === listing.unitType.toLowerCase();
-
       const matchesStore =
         filterStore === "all" || listing.storeId.toString() === filterStore;
 
       return (
-        matchesSearch && matchesManufacturer && matchesUnitType && matchesStore
+        matchesSearch &&
+        matchesGameSystem &&
+        matchesArmy &&
+        matchesUnitType &&
+        matchesManufacturer &&
+        matchesStore
       );
     });
 
     switch (sortBy) {
       case "popular":
-        result.sort((a, b) => {
+        result = [...result].sort((a, b) => {
           const aKey = `${a.storeId}-${a.id}`;
           const bKey = `${b.storeId}-${b.id}`;
           return (
@@ -160,17 +179,44 @@ export default function MarketplacePage() {
         });
         break;
       case "price-low":
-        result.sort((a, b) => a.price - b.price);
+        result = [...result].sort((a, b) => a.price - b.price);
         break;
       case "price-high":
-        result.sort((a, b) => b.price - a.price);
+        result = [...result].sort((a, b) => b.price - a.price);
         break;
     }
 
     return result;
-  };
+  }, [
+    allListings,
+    searchQuery,
+    sortBy,
+    filterGameSystem,
+    filterArmy,
+    filterUnitType,
+    filterManufacturer,
+    filterStore,
+    shuffledOrder,
+  ]);
 
-  const displayListings = filteredAndSortedListings();
+  // Reset visible count whenever filters or sort change so users start from the top
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [
+    searchQuery,
+    sortBy,
+    filterGameSystem,
+    filterArmy,
+    filterUnitType,
+    filterManufacturer,
+    filterStore,
+  ]);
+
+  const sortOptions = [
+    { value: "popular", label: "Most Popular" },
+    { value: "price-low", label: "Price: Low to High" },
+    { value: "price-high", label: "Price: High to Low" },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -186,13 +232,11 @@ export default function MarketplacePage() {
               creators
             </p>
           </div>
-
-          {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               type="text"
-              placeholder="Search miniatures, armies, or tags..."
+              placeholder="Search miniatures, armies, game systems, or tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -210,20 +254,55 @@ export default function MarketplacePage() {
               {displayListings.length === 1 ? "listing" : "listings"}
             </span>
 
-            <Select value={filterStore} onValueChange={setFilterStore}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="All Stores" />
+            {/* 1. Game System */}
+            <Select
+              value={filterGameSystem}
+              onValueChange={setFilterGameSystem}
+            >
+              <SelectTrigger className="w-[190px]">
+                <SelectValue placeholder="All Game Systems" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Stores</SelectItem>
-                {STORES.map((store) => (
-                  <SelectItem key={store.id} value={store.id.toString()}>
-                    {store.name}
+                <SelectItem value="all">All Game Systems</SelectItem>
+                {allGameSystems.map((gs) => (
+                  <SelectItem key={gs} value={gs}>
+                    {gs}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
+            {/* 2. Army */}
+            <Select value={filterArmy} onValueChange={setFilterArmy}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Armies" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Armies</SelectItem>
+                {allArmies.map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* 3. Model / Unit Type */}
+            <Select value={filterUnitType} onValueChange={setFilterUnitType}>
+              <SelectTrigger className="w-[190px]">
+                <SelectValue placeholder="All Models" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Models</SelectItem>
+                {allUnitTypes.map((u) => (
+                  <SelectItem key={u} value={u}>
+                    {u}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* 4. Manufacturer */}
             <Select
               value={filterManufacturer}
               onValueChange={setFilterManufacturer}
@@ -233,31 +312,16 @@ export default function MarketplacePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Manufacturers</SelectItem>
-                {MANUFACTURERS.map((manufacturer) => (
-                  <SelectItem
-                    key={manufacturer.id}
-                    value={manufacturer.id.toString()}
-                  >
-                    {manufacturer.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterUnitType} onValueChange={setFilterUnitType}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Unit Types" />
-              </SelectTrigger>
-              <SelectContent>
-                {unitTypes.map((type) => (
-                  <SelectItem key={type} value={type.toLowerCase()}>
-                    {type}
+                {MANUFACTURERS.map((m) => (
+                  <SelectItem key={m.id} value={m.id.toString()}>
+                    {m.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          {/* Sort */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted-foreground">
               Sort by:
@@ -279,7 +343,7 @@ export default function MarketplacePage() {
 
         {/* Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {displayListings.map((listing, index) => {
+          {displayListings.slice(0, visibleCount).map((listing, index) => {
             const manufacturer = MANUFACTURERS.find(
               (m) => m.id === listing.manufacturerId,
             );
@@ -290,15 +354,14 @@ export default function MarketplacePage() {
                 className="group"
               >
                 <Card className="overflow-hidden h-full transition-all hover:shadow-lg">
-                  <div className="aspect-video relative overflow-hidden bg-muted">
-                    <img
-                      src={listing.image}
-                      alt={listing.name}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    />
-                  </div>
+                  <CardImage src={listing.image} alt={listing.name} />
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center gap-2 flex-wrap">
+                      {listing.gameSystem && (
+                        <Badge variant="outline" className="text-xs">
+                          {listing.gameSystem}
+                        </Badge>
+                      )}
                       <Badge variant="secondary">{listing.army}</Badge>
                       <span className="text-xs text-muted-foreground">
                         {listing.unitType}
@@ -314,7 +377,6 @@ export default function MarketplacePage() {
                       </p>
                     </div>
 
-                    {/* Manufacturer */}
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-secondary rounded flex items-center justify-center shrink-0">
                         {manufacturer?.logo ? (
@@ -328,11 +390,13 @@ export default function MarketplacePage() {
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        by {manufacturer?.name}
+                        by{" "}
+                        {listing.manufacturerId === 0
+                          ? listing.storeName
+                          : manufacturer?.name}
                       </span>
                     </div>
 
-                    {/* Store selling this item */}
                     <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 px-2 py-1.5 rounded-md">
                       <StoreIcon className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
                       <span className="text-xs font-medium text-green-700 dark:text-green-400">
@@ -359,6 +423,22 @@ export default function MarketplacePage() {
             );
           })}
         </div>
+
+        {/* Load More */}
+        {visibleCount < displayListings.length && (
+          <div className="flex flex-col items-center gap-2 mt-8">
+            <button
+              onClick={() => setVisibleCount((c) => c + 12)}
+              className="px-8 py-2.5 rounded-lg border bg-card text-sm font-medium hover:bg-muted transition-colors"
+            >
+              Load More
+            </button>
+            <p className="text-xs text-muted-foreground">
+              Showing {Math.min(visibleCount, displayListings.length)} of{" "}
+              {displayListings.length} listings
+            </p>
+          </div>
+        )}
 
         {displayListings.length === 0 && (
           <Card className="mt-12">

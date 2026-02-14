@@ -2,12 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Store, ShoppingCart, ArrowLeft, ChevronRight } from "lucide-react";
+import {
+  Store,
+  ShoppingCart,
+  ArrowLeft,
+  ChevronRight,
+  Package,
+} from "lucide-react";
 import {
   getItemById,
   getManufacturerById,
-  STORES,
   getStoreById,
+  STORES,
   type Item,
   type ManufacturerInfo,
   type StoreInfo,
@@ -17,6 +23,81 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+
+// ── Safe image components ──────────────────────────────────────────────────────
+function ProductImage({ src, alt }: { src: string; alt: string }) {
+  const [errored, setErrored] = React.useState(false);
+  if (!src.trim() || errored) {
+    return (
+      <div className="w-full h-full bg-muted flex items-center justify-center min-h-[300px]">
+        <Package className="h-20 w-20 text-muted-foreground" />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full h-full object-cover"
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
+function RelatedImage({ src, alt }: { src: string; alt: string }) {
+  const [errored, setErrored] = React.useState(false);
+  if (!src.trim() || errored) {
+    return (
+      <div className="aspect-square w-full bg-muted flex items-center justify-center">
+        <Package className="h-12 w-12 text-muted-foreground" />
+      </div>
+    );
+  }
+  return (
+    <div className="aspect-square w-full overflow-hidden bg-muted">
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+        onError={() => setErrored(true)}
+      />
+    </div>
+  );
+}
+
+// ── Helper: find an item across ALL_ITEMS + every store's sessionStorage ───────
+function findItemAnywhere(
+  itemId: number,
+): { item: Item; storeId: number } | null {
+  // First try the static catalogue
+  const catalogueItem = getItemById(itemId);
+  if (catalogueItem) {
+    // Find which store is selling it
+    for (const store of STORES) {
+      const stored = sessionStorage.getItem(`store_${store.id}_items`);
+      if (stored) {
+        const storeItems: Item[] = JSON.parse(stored);
+        if (storeItems.some((i) => i.id === itemId)) {
+          return { item: catalogueItem, storeId: store.id };
+        }
+      }
+    }
+    // Item exists in catalogue but no store has it — return with store 0
+    return { item: catalogueItem, storeId: 0 };
+  }
+
+  // Not in catalogue — search sessionStorage for custom items
+  for (const store of STORES) {
+    const stored = sessionStorage.getItem(`store_${store.id}_items`);
+    if (stored) {
+      const storeItems: Item[] = JSON.parse(stored);
+      const found = storeItems.find((i) => i.id === itemId);
+      if (found) return { item: found, storeId: store.id };
+    }
+  }
+
+  return null;
+}
 
 export default function ItemPage() {
   const params = useParams();
@@ -29,99 +110,82 @@ export default function ItemPage() {
   const [relatedItems, setRelatedItems] = useState<Item[]>([]);
   const [currentStoreId, setCurrentStoreId] = useState<number | null>(null);
   const [currentStore, setCurrentStore] = useState<StoreInfo | null>(null);
+  const [isCustom, setIsCustom] = useState(false);
 
   useEffect(() => {
     const itemId = parseInt(params.id as string);
+    const result = findItemAnywhere(itemId);
 
-    const foundItem = getItemById(itemId);
-    if (foundItem) {
-      setItem(foundItem);
+    if (!result) return;
 
-      const foundManufacturer = getManufacturerById(foundItem.manufacturerId);
-      setManufacturer(foundManufacturer || null);
+    const { item: foundItem, storeId } = result;
+    setItem(foundItem);
+    setIsCustom(foundItem.manufacturerId === 0);
 
-      // Find which store this item belongs to
-      let itemStoreId: number | null = null;
-      for (const store of STORES) {
-        const storedItems = sessionStorage.getItem(`store_${store.id}_items`);
-        if (storedItems) {
-          const storeItems = JSON.parse(storedItems);
-          if (storeItems.some((i: Item) => i.id === itemId)) {
-            itemStoreId = store.id;
-            break;
-          }
-        }
-      }
-      setCurrentStoreId(itemStoreId);
-      if (itemStoreId) {
-        setCurrentStore(getStoreById(itemStoreId) || null);
-      }
+    // Manufacturer — null for custom items (manufacturerId === 0)
+    const foundManufacturer =
+      foundItem.manufacturerId !== 0
+        ? (getManufacturerById(foundItem.manufacturerId) ?? null)
+        : null;
+    setManufacturer(foundManufacturer);
 
-      // Build related items
-      const related: Item[] = [];
-      const maxItems = 3;
+    // Store
+    const storeIdFinal = storeId || null;
+    setCurrentStoreId(storeIdFinal);
+    if (storeIdFinal) setCurrentStore(getStoreById(storeIdFinal) ?? null);
 
-      if (itemStoreId !== null) {
-        const storedItems = sessionStorage.getItem(
-          `store_${itemStoreId}_items`,
-        );
-        if (storedItems) {
-          const storeItems: Item[] = JSON.parse(storedItems);
+    // Related items — pull from the same store, exclude current item
+    const related: Item[] = [];
+    const maxItems = 3;
 
-          const sameStoreManufacturer = storeItems.filter(
+    if (storeIdFinal) {
+      const stored = sessionStorage.getItem(`store_${storeIdFinal}_items`);
+      if (stored) {
+        const storeItems: Item[] = JSON.parse(stored);
+
+        // Prefer same manufacturer first (skip for custom items)
+        if (foundItem.manufacturerId !== 0) {
+          const sameManufacturer = storeItems.filter(
             (i) =>
               i.id !== itemId && i.manufacturerId === foundItem.manufacturerId,
           );
-          related.push(...sameStoreManufacturer);
+          related.push(...sameManufacturer);
+        }
 
-          if (related.length < maxItems) {
-            const sameStoreOnly = storeItems.filter(
-              (i) =>
-                i.id !== itemId &&
-                i.manufacturerId !== foundItem.manufacturerId,
-            );
-            related.push(...sameStoreOnly.slice(0, maxItems - related.length));
-          }
+        // Fill remainder with other store items
+        if (related.length < maxItems) {
+          const others = storeItems.filter(
+            (i) => i.id !== itemId && !related.some((r) => r.id === i.id),
+          );
+          related.push(...others.slice(0, maxItems - related.length));
         }
       }
-
-      if (related.length < maxItems && foundManufacturer) {
-        for (const store of STORES) {
-          if (store.id === itemStoreId) continue;
-          const storedItems = sessionStorage.getItem(`store_${store.id}_items`);
-          if (storedItems) {
-            const storeItems: Item[] = JSON.parse(storedItems);
-            const matchingItems = storeItems.filter(
-              (i) =>
-                i.id !== itemId && i.manufacturerId === foundManufacturer.id,
-            );
-            related.push(...matchingItems);
-          }
-        }
-      }
-
-      if (related.length < maxItems) {
-        for (const store of STORES) {
-          const storedItems = sessionStorage.getItem(`store_${store.id}_items`);
-          if (storedItems) {
-            const storeItems: Item[] = JSON.parse(storedItems);
-            const otherItems = storeItems.filter(
-              (i) => i.id !== itemId && !related.some((r) => r.id === i.id),
-            );
-            related.push(...otherItems);
-          }
-        }
-      }
-
-      setRelatedItems(related.slice(0, maxItems));
     }
+
+    // Fill any remaining slots from other stores
+    if (related.length < maxItems) {
+      for (const store of STORES) {
+        if (store.id === storeIdFinal) continue;
+        const stored = sessionStorage.getItem(`store_${store.id}_items`);
+        if (stored) {
+          const storeItems: Item[] = JSON.parse(stored);
+          const others = storeItems.filter(
+            (i) => i.id !== itemId && !related.some((r) => r.id === i.id),
+          );
+          related.push(...others.slice(0, maxItems - related.length));
+        }
+        if (related.length >= maxItems) break;
+      }
+    }
+
+    setRelatedItems(related.slice(0, maxItems));
   }, [params.id]);
 
   const handleQuantityChange = (delta: number) => {
     setQuantity(Math.max(1, quantity + delta));
   };
 
-  if (!item || !manufacturer) {
+  if (!item) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -152,26 +216,32 @@ export default function ItemPage() {
           <div className="lg:col-span-7 flex flex-col">
             <Card className="overflow-hidden flex-1">
               <div className="w-full h-full bg-muted">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
+                <ProductImage src={item.image} alt={item.name} />
               </div>
             </Card>
           </div>
 
-          {/* Right Column - Single merged card */}
+          {/* Right Column */}
           <div className="lg:col-span-5 flex flex-col">
             <Card className="flex-1 flex flex-col overflow-hidden">
               <CardContent className="p-5 flex flex-col gap-4 flex-1 overflow-y-auto">
                 {/* Title & description */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    {item.gameSystem && (
+                      <Badge variant="outline" className="text-xs">
+                        {item.gameSystem}
+                      </Badge>
+                    )}
                     <Badge variant="secondary">{item.army}</Badge>
                     <span className="text-xs text-muted-foreground">
                       {item.unitType}
                     </span>
+                    {isCustom && (
+                      <Badge variant="outline" className="text-xs">
+                        Custom
+                      </Badge>
+                    )}
                   </div>
                   <h1 className="text-2xl font-bold tracking-tight mb-2">
                     {item.name}
@@ -182,13 +252,15 @@ export default function ItemPage() {
                 </div>
 
                 {/* Tags */}
-                <div className="flex flex-wrap gap-1.5">
-                  {item.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+                {item.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.tags.map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
 
                 <Separator />
 
@@ -198,11 +270,16 @@ export default function ItemPage() {
                     Product Details
                   </p>
                   {[
+                    { label: "Game System", value: item.gameSystem || "—" },
                     { label: "Army", value: item.army },
                     { label: "Unit Type", value: item.unitType },
-                    { label: "Manufacturer", value: manufacturer.name },
-                    { label: "Material", value: "Resin / PLA" },
-                    { label: "Scale", value: "28mm" },
+                    {
+                      label: "Manufacturer",
+                      value: isCustom
+                        ? (currentStore?.name ?? "Store original")
+                        : (manufacturer?.name ?? "—"),
+                    },
+                    { label: "Format", value: item.format },
                     { label: "Type", value: item.type },
                   ].map(({ label, value }, i, arr) => (
                     <div key={label}>
@@ -250,7 +327,6 @@ export default function ItemPage() {
                   </div>
                 )}
 
-                {/* Spacer to push price + actions to bottom */}
                 <div className="flex-1" />
 
                 {/* Price */}
@@ -311,9 +387,7 @@ export default function ItemPage() {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold tracking-tight mb-2">
-                {currentStoreId
-                  ? "Similar items you might like"
-                  : `More from ${manufacturer?.name}`}
+                {currentStore ? "More from this store" : "You might also like"}
               </h2>
               <p className="text-muted-foreground">
                 Discover other miniatures you might like
@@ -326,13 +400,10 @@ export default function ItemPage() {
                   onClick={() => router.push(`/item/${relatedItem.id}`)}
                   className="overflow-hidden cursor-pointer transition-all hover:shadow-lg group"
                 >
-                  <div className="aspect-square w-full overflow-hidden bg-muted">
-                    <img
-                      src={relatedItem.image}
-                      alt={relatedItem.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  </div>
+                  <RelatedImage
+                    src={relatedItem.image}
+                    alt={relatedItem.name}
+                  />
                   <CardContent className="p-5 space-y-3">
                     <div>
                       <h3 className="font-semibold text-lg line-clamp-1 mb-2">
