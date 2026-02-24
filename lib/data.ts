@@ -64,6 +64,38 @@ export const MANUFACTURERS: ManufacturerInfo[] = [
     logo: "",
     website: "https://www.myminifactory.com/users/MonstrousEncounters",
   },
+  {
+    id: 4,
+    name: "Mezgike",
+    description: "Grimdark sci-fi and fantasy miniatures with a focus on multi-part kits and conversion potential.",
+    since: "January 2021",
+    logo: "",
+    website: "https://www.myminifactory.com/users/Mezgike",
+  },
+  {
+    id: 5,
+    name: "3D Stock",
+    description: "Historical scale models and military vehicles. Accurate 1/72 and 28mm scale models for wargaming.",
+    since: "June 2019",
+    logo: "",
+    website: "https://cults3d.com",
+  },
+  {
+    id: 6,
+    name: "Games Workshop",
+    description: "The original creators of Warhammer. Official 3D scan files for select models.",
+    since: "January 1975",
+    logo: "",
+    website: "https://www.warhammer.com",
+  },
+  {
+    id: 7,
+    name: "Beholder Miniatures",
+    description: "Finely sculpted fantasy miniatures inspired by classic tabletop armies and nature spirits.",
+    since: "September 2020",
+    logo: "",
+    website: "https://www.philibertnet.com",
+  },
 ];
 
 // Stores - retailers that can sell items from any manufacturer at their own prices
@@ -96,7 +128,7 @@ export const STORES: StoreInfo[] = [
 
 // All available items in the marketplace (created by manufacturers)
 export const ALL_ITEMS: Item[] = [
-  // Highlands Miniatures - Manufacturer 1
+  // Highlands Miniatures (id: 1) - Bretonnia
   {
     id: 1,
     name: "Knight of the realm",
@@ -104,7 +136,7 @@ export const ALL_ITEMS: Item[] = [
     army: "Bretonnia",
     unitType: "Knight of the realm",
     description: "Elite mounted knights with ornate armor and lances. Perfect for leading your cavalry charges into battle.",
-    price: 12.99, // Base manufacturer price
+    price: 12.99,
     tags: ["bretonnia", "knight", "cavalry", "elite", "mounted", "medieval"],
     image: "https://dl2.myminifactory.com/object-assets/64da61f3468758.17214992/images/720X720-knights-of-gallia-highlands-miniatures.jpg",
     format: "3D",
@@ -140,7 +172,7 @@ export const ALL_ITEMS: Item[] = [
     manufacturerId: 1,
   },
 
-  // Lost Kingdom Miniatures - Manufacturer 2
+  // Lost Kingdom Miniatures (id: 2) - Bretonnia
   {
     id: 4,
     name: "Knight of the realm",
@@ -184,7 +216,7 @@ export const ALL_ITEMS: Item[] = [
     manufacturerId: 2,
   },
 
-  // Monstrous Encounters - Manufacturer 3
+  // Monstrous Encounters (id: 3) - Bretonnia
   {
     id: 7,
     name: "Knight of the realm",
@@ -227,28 +259,148 @@ export const ALL_ITEMS: Item[] = [
     type: "unit",
     manufacturerId: 3,
   },
+
+  // Mezgike (id: 4) - Warhammer 40k Greenskins
+  {
+    id: 10,
+    name: "Orc boyz",
+    gameSystem: "Warhammer 40k",
+    army: "Greenskins",
+    unitType: "Orc boyz",
+    description: "Rowdy multi-part Freebooter Boyz mob ready for a scrap. Highly customizable kit with multiple weapon and head options.",
+    price: 11.99,
+    tags: ["greenskins", "orks", "orc boyz", "infantry", "multipart", "sci-fi", "40k"],
+    image: "https://dl2.myminifactory.com/object-assets/65dd18597ba935.46987324/images/720X720-freebooter-boyz-multipart-mezgike-01.jpg",
+    format: "3D",
+    type: "unit",
+    manufacturerId: 4,
+  },
+
+  // 3D Stock (id: 5) - Flames of War Germany
+  {
+    id: 11,
+    name: "PzKpfw IV F2",
+    gameSystem: "Flames of war",
+    army: "Germany",
+    unitType: "PzKpfw IV F2",
+    description: "Accurate 1/72 scale model of the iconic German medium tank. Detailed hull and turret with optional stowage.",
+    price: 6.99,
+    tags: ["germany", "tank", "ww2", "panzer", "medium tank", "historical", "flames of war", "1/72"],
+    image: "https://images.cults3d.com/Tx92J0jPpfJ-FlwAu564yRgaoZY=/516x516/filters:no_upscale():format(webp)/https://fbi.cults3d.com/uploaders/31003905/illustration-file/98e3e2a0-fdfd-4c80-8d8b-983a26aa8434/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA-%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0-93.png",
+    format: "3D",
+    type: "vehicle",
+    manufacturerId: 5,
+  },
+  {
+    id: 12,
+    name: "PzKpfw III L",
+    gameSystem: "Flames of war",
+    army: "Germany",
+    unitType: "PzKpfw III L",
+    description: "Detailed 1/72 scale Panzer III Ausf. L with spaced armor and long 5cm gun. Essential for early war German forces.",
+    price: 6.99,
+    tags: ["germany", "tank", "ww2", "panzer", "medium tank", "historical", "flames of war", "1/72"],
+    image: "https://images.cults3d.com/IlBP6FOsDMVG8mzAUaDzMUqjdQo=/516x516/filters:no_upscale():format(webp)/https://fbi.cults3d.com/uploaders/31003905/illustration-file/dd91e5d9-777c-4c14-abd1-158b15c447b1/PZ-3-L.png",
+    format: "3D",
+    type: "vehicle",
+    manufacturerId: 5,
+  },
+
+  // Highlands Miniatures (id: 1) - Orcs and Goblins
+  {
+    id: 13,
+    name: "Goblin wolf rider mob",
+    gameSystem: "Warhammer Old World",
+    army: "Orcs and goblins",
+    unitType: "Goblin wolf rider mob",
+    description: "Fast-moving mounted goblin cavalry riding ferocious steppe wolves. Great for flanking and harassment tactics.",
+    price: 10.99,
+    tags: ["orcs and goblins", "goblin", "wolf rider", "cavalry", "mounted", "fast cavalry", "medieval fantasy"],
+    image: "https://dl2.myminifactory.com/object-assets/661667968291a6.50638688/images/720X720-mounted-steppe-goblins.jpg",
+    format: "3D",
+    type: "unit",
+    manufacturerId: 1,
+  },
+  {
+    id: 14,
+    name: "Stone troll mob",
+    gameSystem: "Warhammer Old World",
+    army: "Orcs and goblins",
+    unitType: "Stone troll mob",
+    description: "Hulking cave trolls with rocky hides and brutal club attacks. Fearsome monsters that anchor your battle line.",
+    price: 13.99,
+    tags: ["orcs and goblins", "troll", "monster", "cave troll", "stone troll", "large model", "medieval fantasy"],
+    image: "https://dl2.myminifactory.com/object-assets/65ef8090b37191.67664221/images/720X720-cave-trolls.jpg",
+    format: "3D",
+    type: "monster",
+    manufacturerId: 1,
+  },
+
+  // Games Workshop (id: 6) - Orcs and Goblins
+  {
+    id: 15,
+    name: "Goblin wolf rider mob",
+    gameSystem: "Warhammer Old World",
+    army: "Orcs and goblins",
+    unitType: "Goblin wolf rider mob",
+    description: "Official Games Workshop 3D scan of the Goblin Wolf Rider Mob. Authentic detail straight from the original sculpt.",
+    price: 15.99,
+    tags: ["orcs and goblins", "goblin", "wolf rider", "cavalry", "official", "3d scan", "games workshop"],
+    image: "https://www.warhammer.com/app/resources/catalog/product/920x950/99122709007_OGTWolfRiderMob01.jpg?fm=webp&w=892&h=920",
+    format: "3D",
+    type: "unit",
+    manufacturerId: 6,
+  },
+
+  // Beholder Miniatures (id: 7) - Age of Sigmar Sylvaneth
+  {
+    id: 16,
+    name: "Dryads",
+    gameSystem: "Age of Sigmar",
+    army: "Sylvaneth",
+    unitType: "Dryads",
+    description: "Ethereal woodland spirits with flowing branch-like forms. Hauntingly beautiful models that bring the forest to life on your tabletop.",
+    price: 11.99,
+    tags: ["sylvaneth", "dryads", "forest spirits", "age of sigmar", "nature", "fantasy", "ethereal"],
+    image: "https://cdn1.philibertnet.com/829815-large_default/the-beholder-miniatures-sylvains-invocations-des-bois.jpg",
+    format: "3D",
+    type: "unit",
+    manufacturerId: 7,
+  },
 ];
 
 // Default store inventories with store-specific pricing
 // Format: { itemId: X, storePrice: Y }
 export const DEFAULT_STORE_INVENTORIES: Record<number, StoreItemListing[]> = {
   1: [ // Epic Prints Shop - Premium pricing
-    { itemId: 1, storePrice: 14.99 }, // +$2 markup
-    { itemId: 2, storePrice: 10.49 }, // +$1.50 markup
-    { itemId: 4, storePrice: 12.99 }, // +$2 markup
-    { itemId: 7, storePrice: 16.99 }, // +$2 markup
+    { itemId: 1, storePrice: 14.99 },
+    { itemId: 2, storePrice: 10.49 },
+    { itemId: 4, storePrice: 12.99 },
+    { itemId: 7, storePrice: 16.99 },
+    { itemId: 10, storePrice: 13.99 },
+    { itemId: 13, storePrice: 12.99 },
+    { itemId: 15, storePrice: 17.99 },
+    { itemId: 16, storePrice: 13.99 },
   ],
   2: [ // Tabletop Treasures - Mid-range pricing
-    { itemId: 1, storePrice: 13.49 }, // +$0.50 markup
-    { itemId: 3, storePrice: 9.49 },  // +$0.50 markup
-    { itemId: 5, storePrice: 8.49 },  // +$0.50 markup
-    { itemId: 8, storePrice: 10.49 }, // +$0.50 markup
+    { itemId: 1, storePrice: 13.49 },
+    { itemId: 3, storePrice: 9.49 },
+    { itemId: 5, storePrice: 8.49 },
+    { itemId: 8, storePrice: 10.49 },
+    { itemId: 11, storePrice: 7.49 },
+    { itemId: 12, storePrice: 7.49 },
+    { itemId: 14, storePrice: 14.49 },
+    { itemId: 16, storePrice: 12.49 },
   ],
   3: [ // Mini Market - Budget pricing (discounts!)
-    { itemId: 2, storePrice: 7.99 },  // -$1 discount
-    { itemId: 4, storePrice: 9.99 },  // -$1 discount
-    { itemId: 6, storePrice: 6.99 },  // -$1 discount
-    { itemId: 9, storePrice: 8.99 },  // -$1 discount
+    { itemId: 2, storePrice: 7.99 },
+    { itemId: 4, storePrice: 9.99 },
+    { itemId: 6, storePrice: 6.99 },
+    { itemId: 9, storePrice: 8.99 },
+    { itemId: 11, storePrice: 5.99 },
+    { itemId: 12, storePrice: 5.99 },
+    { itemId: 13, storePrice: 9.99 },
+    { itemId: 15, storePrice: 13.99 },
   ],
 };
 
@@ -258,7 +410,6 @@ export function getDefaultStoreItems(storeId: number): Item[] {
   return listings.map(listing => {
     const item = ALL_ITEMS.find(i => i.id === listing.itemId);
     if (!item) return null;
-    // Return item with store's price
     return {
       ...item,
       price: listing.storePrice,
@@ -300,7 +451,7 @@ export function searchItems(query: string): Item[] {
 
 // Helper function to search items by unit type (to find similar units across manufacturers)
 export function getItemsByUnitType(unitType: string): Item[] {
-  return ALL_ITEMS.filter(item => 
+  return ALL_ITEMS.filter(item =>
     item.unitType.toLowerCase() === unitType.toLowerCase()
   );
 }
@@ -308,7 +459,7 @@ export function getItemsByUnitType(unitType: string): Item[] {
 // Helper function to get all stores selling a specific item with their prices
 export function getStoresSelling(itemId: number): Array<{store: StoreInfo, price: number}> {
   const result: Array<{store: StoreInfo, price: number}> = [];
-  
+
   Object.entries(DEFAULT_STORE_INVENTORIES).forEach(([storeId, listings]) => {
     const listing = listings.find(l => l.itemId === itemId);
     if (listing) {
@@ -318,6 +469,6 @@ export function getStoresSelling(itemId: number): Array<{store: StoreInfo, price
       }
     }
   });
-  
+
   return result;
 }
