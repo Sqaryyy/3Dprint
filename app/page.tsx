@@ -263,10 +263,10 @@ export default function MarketplacePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b bg-card">
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <div className="border-b bg-card sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight mb-2">
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-1 sm:mb-2">
               3D Miniatures Marketplace
             </h1>
             <p className="text-muted-foreground">
@@ -287,21 +287,42 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {/* Filters and Sort */}
-        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-          <div className="flex items-center gap-4 flex-wrap">
-            <span className="text-sm font-medium text-muted-foreground">
+        <div className="mb-5 sm:mb-6 space-y-3">
+          {/* Count + Sort row — always one clean line */}
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-muted-foreground shrink-0">
               {displayListings.length}{" "}
               {displayListings.length === 1 ? "listing" : "listings"}
             </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground hidden sm:block">
+                Sort by:
+              </span>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[160px] sm:w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-            {/* 1. Game System — top of the cascade */}
+          {/* Filter grid — 2 cols on mobile, inline flex on desktop */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+            {/* 1. Game System */}
             <Select
               value={filterGameSystem}
               onValueChange={handleGameSystemChange}
             >
-              <SelectTrigger className="w-[190px]">
+              <SelectTrigger className="w-full sm:w-[190px]">
                 <SelectValue placeholder="All Game Systems" />
               </SelectTrigger>
               <SelectContent>
@@ -314,9 +335,9 @@ export default function MarketplacePage() {
               </SelectContent>
             </Select>
 
-            {/* 2. Army — depends on Game System */}
+            {/* 2. Army */}
             <Select value={filterArmy} onValueChange={handleArmyChange}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="All Armies" />
               </SelectTrigger>
               <SelectContent>
@@ -329,9 +350,9 @@ export default function MarketplacePage() {
               </SelectContent>
             </Select>
 
-            {/* 3. Unit Type — depends on Game System + Army */}
+            {/* 3. Unit Type */}
             <Select value={filterUnitType} onValueChange={handleUnitTypeChange}>
-              <SelectTrigger className="w-[190px]">
+              <SelectTrigger className="w-full sm:w-[190px]">
                 <SelectValue placeholder="All Models" />
               </SelectTrigger>
               <SelectContent>
@@ -344,12 +365,12 @@ export default function MarketplacePage() {
               </SelectContent>
             </Select>
 
-            {/* 4. Manufacturer — depends on Game System + Army + Unit Type */}
+            {/* 4. Manufacturer */}
             <Select
               value={filterManufacturer}
               onValueChange={setFilterManufacturer}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="All Manufacturers" />
               </SelectTrigger>
               <SelectContent>
@@ -362,29 +383,10 @@ export default function MarketplacePage() {
               </SelectContent>
             </Select>
           </div>
-
-          {/* Sort */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              Sort by:
-            </span>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         {/* Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
           {displayListings.slice(0, visibleCount).map((listing, index) => {
             const manufacturer = MANUFACTURERS.find(
               (m) => m.id === listing.manufacturerId,
@@ -397,8 +399,8 @@ export default function MarketplacePage() {
               >
                 <Card className="overflow-hidden h-full transition-all hover:shadow-lg">
                   <CardImage src={listing.image} alt={listing.name} />
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                    <div className="hidden sm:flex items-center gap-2 flex-wrap">
                       {listing.gameSystem && (
                         <Badge variant="outline" className="text-xs">
                           {listing.gameSystem}
@@ -409,12 +411,18 @@ export default function MarketplacePage() {
                         {listing.unitType}
                       </span>
                     </div>
+                    {/* Mobile: compact army + unit type */}
+                    <div className="flex sm:hidden items-center gap-1 flex-wrap">
+                      <Badge variant="secondary" className="text-xs">
+                        {listing.army}
+                      </Badge>
+                    </div>
 
                     <div>
-                      <h3 className="font-semibold text-lg line-clamp-1 mb-1">
+                      <h3 className="font-semibold text-sm sm:text-lg line-clamp-1 mb-0.5 sm:mb-1">
                         {listing.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="hidden sm:block text-sm text-muted-foreground line-clamp-2">
                         {listing.description}
                       </p>
                     </div>
@@ -439,14 +447,14 @@ export default function MarketplacePage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 px-2 py-1.5 rounded-md">
+                    <div className="hidden sm:flex items-center gap-2 bg-green-50 dark:bg-green-950/30 px-2 py-1.5 rounded-md">
                       <StoreIcon className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
                       <span className="text-xs font-medium text-green-700 dark:text-green-400">
                         Sold by {listing.storeName}
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap gap-1">
+                    <div className="hidden sm:flex flex-wrap gap-1">
                       {listing.tags.slice(0, 3).map((tag) => (
                         <Badge key={tag} variant="outline" className="text-xs">
                           {tag}
@@ -454,8 +462,8 @@ export default function MarketplacePage() {
                       ))}
                     </div>
 
-                    <div className="pt-2 border-t">
-                      <span className="text-2xl font-bold">
+                    <div className="pt-1.5 sm:pt-2 border-t mt-auto">
+                      <span className="text-lg sm:text-2xl font-bold">
                         ${listing.price.toFixed(2)}
                       </span>
                     </div>
