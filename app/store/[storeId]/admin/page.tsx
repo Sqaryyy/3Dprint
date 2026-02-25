@@ -380,36 +380,36 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* ── Header ── */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-3 mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Admin Panel - {storeInfo.name}
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Admin — {storeInfo.name}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm">
               Add items from any manufacturer and set your own prices
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="secondary" asChild>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" asChild>
               <Link href={`/store/${storeId}`}>View Store</Link>
             </Button>
-            <Button variant="outline" asChild>
+            <Button variant="outline" size="sm" asChild>
               <Link href={`/store/${storeId}/admin/create-item`}>
                 <Plus className="h-4 w-4 mr-1" />
                 Create Item
               </Link>
             </Button>
-            <Button asChild>
+            <Button size="sm" asChild>
               <Link href="/">Marketplace</Link>
             </Button>
           </div>
         </div>
 
         {/* ── Unified filter bar ── */}
-        <div className="flex items-center gap-3 flex-wrap mb-6">
-          <div className="relative flex-1 min-w-[180px]">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 mb-6">
+          <div className="relative col-span-2 sm:flex-1 sm:min-w-[180px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               type="text"
@@ -425,7 +425,7 @@ export default function AdminPage() {
             value={filterGameSystem}
             onValueChange={handleGameSystemChange}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="All Game Systems" />
             </SelectTrigger>
             <SelectContent>
@@ -440,7 +440,7 @@ export default function AdminPage() {
 
           {/* Cascading: Army */}
           <Select value={filterArmy} onValueChange={handleArmyChange}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="All Armies" />
             </SelectTrigger>
             <SelectContent>
@@ -455,7 +455,7 @@ export default function AdminPage() {
 
           {/* Cascading: Unit Type */}
           <Select value={filterUnitType} onValueChange={handleUnitTypeChange}>
-            <SelectTrigger className="w-[170px]">
+            <SelectTrigger className="w-full sm:w-[170px]">
               <SelectValue placeholder="All Models" />
             </SelectTrigger>
             <SelectContent>
@@ -473,7 +473,7 @@ export default function AdminPage() {
             value={filterManufacturer}
             onValueChange={setFilterManufacturer}
           >
-            <SelectTrigger className="w-[190px]">
+            <SelectTrigger className="w-full sm:w-[190px]">
               <SelectValue placeholder="All Manufacturers" />
             </SelectTrigger>
             <SelectContent>
@@ -497,7 +497,7 @@ export default function AdminPage() {
                 setFilterManufacturer("all");
                 setSearchQuery("");
               }}
-              className="gap-1.5 text-muted-foreground"
+              className="col-span-2 sm:col-span-1 gap-1.5 text-muted-foreground w-full sm:w-auto justify-center sm:justify-start"
             >
               <X className="h-3.5 w-3.5" />
               Clear
@@ -509,7 +509,7 @@ export default function AdminPage() {
           {/* ── Available Items ── */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle>
                   Available Items
                   <span className="text-muted-foreground font-normal text-sm ml-2">
@@ -530,7 +530,7 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+              <div className="space-y-3 sm:max-h-[600px] sm:overflow-y-auto sm:pr-2">
                 {filteredAvailableItems.length === 0 ? (
                   <div className="text-center py-8">
                     <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
@@ -552,7 +552,7 @@ export default function AdminPage() {
                         className="hover:shadow-md transition-shadow"
                       >
                         <CardContent className="p-4">
-                          <div className="flex gap-3">
+                          <div className="flex gap-2 flex-wrap shrink-0">
                             <ItemThumbnail src={item.image} alt={item.name} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -631,7 +631,7 @@ export default function AdminPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+              <div className="space-y-3 sm:max-h-[600px] sm:overflow-y-auto sm:pr-2">
                 {storeItems.length === 0 ? (
                   <div className="text-center py-8">
                     <Store className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
@@ -660,7 +660,7 @@ export default function AdminPage() {
                         className="hover:shadow-md transition-shadow"
                       >
                         <CardContent className="p-4">
-                          <div className="flex gap-3">
+                          <div className="flex gap-2 flex-wrap shrink-0">
                             <ItemThumbnail src={item.image} alt={item.name} />
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-start gap-2">
@@ -802,7 +802,7 @@ export default function AdminPage() {
               </div>
             </div>
           )}
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
             <Button variant="outline" onClick={closePriceModal}>
               Cancel
             </Button>
@@ -907,7 +907,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setShowBulkModal(false)}>
               Cancel
             </Button>
