@@ -224,15 +224,36 @@ export default function AdminPage() {
     return [...new Set(pool.map((i) => i.unitType))].sort();
   }, [allItemsPool, filterGameSystem, filterArmy]);
 
+  // Cascading: manufacturers filtered by game system + army + unit type
+  const availableManufacturers = useMemo(() => {
+    let pool = allItemsPool;
+    if (filterGameSystem !== "all")
+      pool = pool.filter((i) => i.gameSystem === filterGameSystem);
+    if (filterArmy !== "all") pool = pool.filter((i) => i.army === filterArmy);
+    if (filterUnitType !== "all")
+      pool = pool.filter(
+        (i) => i.unitType.toLowerCase() === filterUnitType.toLowerCase(),
+      );
+    const ids = new Set(pool.map((i) => i.manufacturerId));
+    return MANUFACTURERS.filter((m) => ids.has(m.id));
+  }, [allItemsPool, filterGameSystem, filterArmy, filterUnitType]);
+
   const handleGameSystemChange = (value: string) => {
     setFilterGameSystem(value);
     setFilterArmy("all");
     setFilterUnitType("all");
+    setFilterManufacturer("all");
   };
 
   const handleArmyChange = (value: string) => {
     setFilterArmy(value);
     setFilterUnitType("all");
+    setFilterManufacturer("all");
+  };
+
+  const handleUnitTypeChange = (value: string) => {
+    setFilterUnitType(value);
+    setFilterManufacturer("all");
   };
 
   const filtersActive =
@@ -433,7 +454,7 @@ export default function AdminPage() {
           </Select>
 
           {/* Cascading: Unit Type */}
-          <Select value={filterUnitType} onValueChange={setFilterUnitType}>
+          <Select value={filterUnitType} onValueChange={handleUnitTypeChange}>
             <SelectTrigger className="w-[170px]">
               <SelectValue placeholder="All Models" />
             </SelectTrigger>
@@ -447,6 +468,7 @@ export default function AdminPage() {
             </SelectContent>
           </Select>
 
+          {/* Cascading: Manufacturer */}
           <Select
             value={filterManufacturer}
             onValueChange={setFilterManufacturer}
@@ -456,7 +478,7 @@ export default function AdminPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Manufacturers</SelectItem>
-              {MANUFACTURERS.map((m) => (
+              {availableManufacturers.map((m) => (
                 <SelectItem key={m.id} value={m.id.toString()}>
                   {m.name}
                 </SelectItem>
