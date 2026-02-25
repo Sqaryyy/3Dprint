@@ -301,7 +301,7 @@ export default function MarketplacePage() {
                 Sort by:
               </span>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[160px] sm:w-[180px]">
+                <SelectTrigger className="w-40 sm:w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
