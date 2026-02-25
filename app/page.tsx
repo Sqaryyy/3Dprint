@@ -139,16 +139,37 @@ export default function MarketplacePage() {
     return [...new Set(pool.map((l) => l.unitType))].sort();
   }, [itemsPool, filterGameSystem, filterArmy]);
 
+  // 4. Manufacturers — filtered by game system + army + unit type
+  const availableManufacturers = useMemo(() => {
+    let pool = itemsPool;
+    if (filterGameSystem !== "all")
+      pool = pool.filter((l) => l.gameSystem === filterGameSystem);
+    if (filterArmy !== "all") pool = pool.filter((l) => l.army === filterArmy);
+    if (filterUnitType !== "all")
+      pool = pool.filter(
+        (l) => l.unitType.toLowerCase() === filterUnitType.toLowerCase(),
+      );
+    const ids = new Set(pool.map((l) => l.manufacturerId));
+    return MANUFACTURERS.filter((m) => ids.has(m.id));
+  }, [itemsPool, filterGameSystem, filterArmy, filterUnitType]);
+
   // Reset downstream filters when a parent filter changes
   const handleGameSystemChange = (value: string) => {
     setFilterGameSystem(value);
     setFilterArmy("all");
     setFilterUnitType("all");
+    setFilterManufacturer("all");
   };
 
   const handleArmyChange = (value: string) => {
     setFilterArmy(value);
     setFilterUnitType("all");
+    setFilterManufacturer("all");
+  };
+
+  const handleUnitTypeChange = (value: string) => {
+    setFilterUnitType(value);
+    setFilterManufacturer("all");
   };
 
   const displayListings = useMemo(() => {
@@ -309,7 +330,7 @@ export default function MarketplacePage() {
             </Select>
 
             {/* 3. Unit Type — depends on Game System + Army */}
-            <Select value={filterUnitType} onValueChange={setFilterUnitType}>
+            <Select value={filterUnitType} onValueChange={handleUnitTypeChange}>
               <SelectTrigger className="w-[190px]">
                 <SelectValue placeholder="All Models" />
               </SelectTrigger>
@@ -323,7 +344,7 @@ export default function MarketplacePage() {
               </SelectContent>
             </Select>
 
-            {/* 4. Manufacturer */}
+            {/* 4. Manufacturer — depends on Game System + Army + Unit Type */}
             <Select
               value={filterManufacturer}
               onValueChange={setFilterManufacturer}
@@ -333,7 +354,7 @@ export default function MarketplacePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Manufacturers</SelectItem>
-                {MANUFACTURERS.map((m) => (
+                {availableManufacturers.map((m) => (
                   <SelectItem key={m.id} value={m.id.toString()}>
                     {m.name}
                   </SelectItem>
