@@ -104,8 +104,6 @@ export default function MarketplacePage() {
   }, []);
 
   // Use ALL_ITEMS as the base so options are available immediately on first render
-  // (allListings is populated async from sessionStorage — it's empty on the first paint).
-  // Custom store-created items that exist only in sessionStorage get merged in via allListings.
   const itemsPool = useMemo(() => {
     const combined = [
       ...ALL_ITEMS,
@@ -114,21 +112,44 @@ export default function MarketplacePage() {
     return combined;
   }, [allListings]);
 
+  // --- Cascading filter options ---
+
+  // 1. Game Systems — always show all
   const allGameSystems = useMemo(
     () =>
       [...new Set(itemsPool.map((l) => l.gameSystem).filter(Boolean))].sort(),
     [itemsPool],
   );
 
-  const allArmies = useMemo(
-    () => [...new Set(itemsPool.map((l) => l.army))].sort(),
-    [itemsPool],
-  );
+  // 2. Armies — filtered by selected game system
+  const availableArmies = useMemo(() => {
+    const pool =
+      filterGameSystem === "all"
+        ? itemsPool
+        : itemsPool.filter((l) => l.gameSystem === filterGameSystem);
+    return [...new Set(pool.map((l) => l.army))].sort();
+  }, [itemsPool, filterGameSystem]);
 
-  const allUnitTypes = useMemo(
-    () => [...new Set(itemsPool.map((l) => l.unitType))].sort(),
-    [itemsPool],
-  );
+  // 3. Unit types — filtered by selected game system AND army
+  const availableUnitTypes = useMemo(() => {
+    let pool = itemsPool;
+    if (filterGameSystem !== "all")
+      pool = pool.filter((l) => l.gameSystem === filterGameSystem);
+    if (filterArmy !== "all") pool = pool.filter((l) => l.army === filterArmy);
+    return [...new Set(pool.map((l) => l.unitType))].sort();
+  }, [itemsPool, filterGameSystem, filterArmy]);
+
+  // Reset downstream filters when a parent filter changes
+  const handleGameSystemChange = (value: string) => {
+    setFilterGameSystem(value);
+    setFilterArmy("all");
+    setFilterUnitType("all");
+  };
+
+  const handleArmyChange = (value: string) => {
+    setFilterArmy(value);
+    setFilterUnitType("all");
+  };
 
   const displayListings = useMemo(() => {
     let result = allListings.filter((listing) => {
@@ -199,7 +220,7 @@ export default function MarketplacePage() {
     shuffledOrder,
   ]);
 
-  // Reset visible count whenever filters or sort change so users start from the top
+  // Reset visible count whenever filters or sort change
   useEffect(() => {
     setVisibleCount(12);
   }, [
@@ -254,10 +275,10 @@ export default function MarketplacePage() {
               {displayListings.length === 1 ? "listing" : "listings"}
             </span>
 
-            {/* 1. Game System */}
+            {/* 1. Game System — top of the cascade */}
             <Select
               value={filterGameSystem}
-              onValueChange={setFilterGameSystem}
+              onValueChange={handleGameSystemChange}
             >
               <SelectTrigger className="w-[190px]">
                 <SelectValue placeholder="All Game Systems" />
@@ -272,14 +293,14 @@ export default function MarketplacePage() {
               </SelectContent>
             </Select>
 
-            {/* 2. Army */}
-            <Select value={filterArmy} onValueChange={setFilterArmy}>
+            {/* 2. Army — depends on Game System */}
+            <Select value={filterArmy} onValueChange={handleArmyChange}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All Armies" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Armies</SelectItem>
-                {allArmies.map((a) => (
+                {availableArmies.map((a) => (
                   <SelectItem key={a} value={a}>
                     {a}
                   </SelectItem>
@@ -287,14 +308,14 @@ export default function MarketplacePage() {
               </SelectContent>
             </Select>
 
-            {/* 3. Model / Unit Type */}
+            {/* 3. Unit Type — depends on Game System + Army */}
             <Select value={filterUnitType} onValueChange={setFilterUnitType}>
               <SelectTrigger className="w-[190px]">
                 <SelectValue placeholder="All Models" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Models</SelectItem>
-                {allUnitTypes.map((u) => (
+                {availableUnitTypes.map((u) => (
                   <SelectItem key={u} value={u}>
                     {u}
                   </SelectItem>

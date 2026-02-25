@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Plus, X, Search, DollarSign, Store, Package } from "lucide-react";
+import {
+  Plus,
+  X,
+  Search,
+  DollarSign,
+  Store,
+  Package,
+  PackagePlus,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -88,6 +96,13 @@ export default function AdminPage() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [customPrice, setCustomPrice] = useState("");
   const [showPriceModal, setShowPriceModal] = useState(false);
+
+  // ── Bulk add state ─────────────────────────────────────────────────────────
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkMarkup, setBulkMarkup] = useState("0");
+  const [bulkMarkupType, setBulkMarkupType] = useState<"percent" | "fixed">(
+    "percent",
+  );
 
   // ── Unified filters ────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
@@ -190,14 +205,35 @@ export default function AdminPage() {
       ].sort(),
     [allItemsPool],
   );
-  const allArmies = useMemo(
-    () => [...new Set(allItemsPool.map((i) => i.army))].sort(),
-    [allItemsPool],
-  );
-  const allUnitTypes = useMemo(
-    () => [...new Set(allItemsPool.map((i) => i.unitType))].sort(),
-    [allItemsPool],
-  );
+
+  // Cascading: armies filtered by game system
+  const availableArmies = useMemo(() => {
+    const pool =
+      filterGameSystem === "all"
+        ? allItemsPool
+        : allItemsPool.filter((i) => i.gameSystem === filterGameSystem);
+    return [...new Set(pool.map((i) => i.army))].sort();
+  }, [allItemsPool, filterGameSystem]);
+
+  // Cascading: unit types filtered by game system + army
+  const availableUnitTypes = useMemo(() => {
+    let pool = allItemsPool;
+    if (filterGameSystem !== "all")
+      pool = pool.filter((i) => i.gameSystem === filterGameSystem);
+    if (filterArmy !== "all") pool = pool.filter((i) => i.army === filterArmy);
+    return [...new Set(pool.map((i) => i.unitType))].sort();
+  }, [allItemsPool, filterGameSystem, filterArmy]);
+
+  const handleGameSystemChange = (value: string) => {
+    setFilterGameSystem(value);
+    setFilterArmy("all");
+    setFilterUnitType("all");
+  };
+
+  const handleArmyChange = (value: string) => {
+    setFilterArmy(value);
+    setFilterUnitType("all");
+  };
 
   const filtersActive =
     filterGameSystem !== "all" ||
@@ -263,6 +299,48 @@ export default function AdminPage() {
     ],
   );
 
+  // ── Bulk add helpers ───────────────────────────────────────────────────────
+  const computeBulkPrice = (basePrice: number): number => {
+    const markup = parseFloat(bulkMarkup) || 0;
+    if (bulkMarkupType === "percent") {
+      return Math.max(0, basePrice * (1 + markup / 100));
+    }
+    return Math.max(0, basePrice + markup);
+  };
+
+  const confirmBulkAdd = () => {
+    const newItems = filteredAvailableItems.map((item) => ({
+      ...item,
+      price: parseFloat(computeBulkPrice(item.price).toFixed(2)),
+    }));
+    saveStoreItems([...storeItems, ...newItems]);
+    setShowBulkModal(false);
+    setBulkMarkup("0");
+    setBulkMarkupType("percent");
+  };
+
+  // ── Label for what's currently filtered ───────────────────────────────────
+  const categoryLabel = useMemo(() => {
+    const parts: string[] = [];
+    if (filterGameSystem !== "all") parts.push(filterGameSystem);
+    if (filterArmy !== "all") parts.push(filterArmy);
+    if (filterUnitType !== "all") parts.push(filterUnitType);
+    if (filterManufacturer !== "all") {
+      const m = MANUFACTURERS.find(
+        (m) => m.id === parseInt(filterManufacturer),
+      );
+      if (m) parts.push(m.name);
+    }
+    if (searchQuery) parts.push(`"${searchQuery}"`);
+    return parts.length > 0 ? parts.join(" › ") : "all available items";
+  }, [
+    filterGameSystem,
+    filterArmy,
+    filterUnitType,
+    filterManufacturer,
+    searchQuery,
+  ]);
+
   if (!storeInfo) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -321,7 +399,11 @@ export default function AdminPage() {
             />
           </div>
 
-          <Select value={filterGameSystem} onValueChange={setFilterGameSystem}>
+          {/* Cascading: Game System */}
+          <Select
+            value={filterGameSystem}
+            onValueChange={handleGameSystemChange}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Game Systems" />
             </SelectTrigger>
@@ -335,13 +417,14 @@ export default function AdminPage() {
             </SelectContent>
           </Select>
 
-          <Select value={filterArmy} onValueChange={setFilterArmy}>
+          {/* Cascading: Army */}
+          <Select value={filterArmy} onValueChange={handleArmyChange}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="All Armies" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Armies</SelectItem>
-              {allArmies.map((a) => (
+              {availableArmies.map((a) => (
                 <SelectItem key={a} value={a}>
                   {a}
                 </SelectItem>
@@ -349,13 +432,14 @@ export default function AdminPage() {
             </SelectContent>
           </Select>
 
+          {/* Cascading: Unit Type */}
           <Select value={filterUnitType} onValueChange={setFilterUnitType}>
             <SelectTrigger className="w-[170px]">
               <SelectValue placeholder="All Models" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Models</SelectItem>
-              {allUnitTypes.map((u) => (
+              {availableUnitTypes.map((u) => (
                 <SelectItem key={u} value={u}>
                   {u}
                 </SelectItem>
@@ -403,12 +487,25 @@ export default function AdminPage() {
           {/* ── Available Items ── */}
           <Card>
             <CardHeader>
-              <CardTitle>
-                Available Items
-                <span className="text-muted-foreground font-normal text-sm ml-2">
-                  ({filteredAvailableItems.length})
-                </span>
-              </CardTitle>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle>
+                  Available Items
+                  <span className="text-muted-foreground font-normal text-sm ml-2">
+                    ({filteredAvailableItems.length})
+                  </span>
+                </CardTitle>
+                {filteredAvailableItems.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 shrink-0"
+                    onClick={() => setShowBulkModal(true)}
+                  >
+                    <PackagePlus className="h-4 w-4" />
+                    Add All ({filteredAvailableItems.length})
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
@@ -631,7 +728,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* ── Price Modal ── */}
+      {/* ── Single Item Price Modal ── */}
       <Dialog open={showPriceModal} onOpenChange={setShowPriceModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -688,6 +785,114 @@ export default function AdminPage() {
               Cancel
             </Button>
             <Button onClick={confirmAddItem}>Add to Store</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Bulk Add Modal ── */}
+      <Dialog open={showBulkModal} onOpenChange={setShowBulkModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PackagePlus className="h-5 w-5" />
+              Bulk Add Items
+            </DialogTitle>
+            <DialogDescription>
+              Add <strong>{filteredAvailableItems.length}</strong> items from{" "}
+              <strong>{categoryLabel}</strong> to your store at once.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            {/* Markup controls */}
+            <div className="space-y-3">
+              <Label>Price Markup (optional)</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={bulkMarkup}
+                    onChange={(e) => setBulkMarkup(e.target.value)}
+                    className="pr-16"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    {bulkMarkupType === "percent" ? "%" : "$"}
+                  </span>
+                </div>
+                <Select
+                  value={bulkMarkupType}
+                  onValueChange={(v) =>
+                    setBulkMarkupType(v as "percent" | "fixed")
+                  }
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percent">Percent (%)</SelectItem>
+                    <SelectItem value="fixed">Fixed ($)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {bulkMarkupType === "percent"
+                  ? `All items will be added at base price ${parseFloat(bulkMarkup) >= 0 ? "+" : ""}${bulkMarkup || 0}%.`
+                  : `All items will be added at base price ${parseFloat(bulkMarkup) >= 0 ? "+" : ""}$${bulkMarkup || 0}.`}{" "}
+                Leave at 0 to use base prices as-is.
+              </p>
+            </div>
+
+            {/* Preview list */}
+            <div className="space-y-2">
+              <Label>
+                Preview{" "}
+                <span className="text-muted-foreground font-normal">
+                  (showing up to 5)
+                </span>
+              </Label>
+              <div className="rounded-lg border divide-y max-h-[220px] overflow-y-auto">
+                {filteredAvailableItems.slice(0, 5).map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium line-clamp-1">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.army} · {item.unitType}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0 ml-3">
+                      <p className="font-semibold">
+                        ${computeBulkPrice(item.price).toFixed(2)}
+                      </p>
+                      {computeBulkPrice(item.price) !== item.price && (
+                        <p className="text-xs text-muted-foreground">
+                          was ${item.price.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {filteredAvailableItems.length > 5 && (
+                  <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+                    + {filteredAvailableItems.length - 5} more items
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowBulkModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmBulkAdd} className="gap-1.5">
+              <PackagePlus className="h-4 w-4" />
+              Add {filteredAvailableItems.length} Items
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
